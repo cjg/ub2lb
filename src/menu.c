@@ -318,14 +318,19 @@ void display(context_t * ctx, menu_t * self, int selected)
 
 int menu_display(context_t * ctx, menu_t * self)
 {
-	int key, selected = 0;
+	int key, max, selected = 0;
+	menu_t *entry;
+	for(max = -1, entry = self; entry != NULL; entry = entry->next, max++);
+	
 	while (1) {
 		display(ctx, self, selected);
 		key = ctx->c_video_get_key();
 		if (key == 4 && selected > 0)
 			selected--;
-		if (key == 3)
+		if (key == 3 && selected < max)
 			selected++;
+		if (key == 1 || key == 6)
+			return selected;
 	}
 
 	return 0;
