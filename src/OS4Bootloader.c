@@ -69,7 +69,8 @@ static boot_dev_t *get_booting_device(context_t * ctx)
 int __startup bootstrap(context_t * ctx)
 {
 	boot_dev_t *boot;
-	menu_t *menu;
+	menu_t *menu, *entry;
+	int i, selected;
 	clear_bss();
 	ctx->c_setenv("stdout", "serial");
 	ctx->c_video_clear();
@@ -77,17 +78,49 @@ int __startup bootstrap(context_t * ctx)
 	ctx->c_video_draw_text(0, 4, 0, "Booting from ...", 80);
 	boot = get_booting_device(ctx);
 
-	if (boot != NULL) {
-		menu = menu_load(ctx, boot);
-		if (menu != NULL) {
-			menu_display(ctx, menu);
-			menu_free(ctx, menu);
-		} else
-			ctx->c_video_draw_text(0, 5, 0, "We haven't a menu",
-					       80);
-
-		boot->destroy(boot);
+	if (boot == NULL) 
+		return 0;
+	menu = menu_load(ctx, boot);
+	if (menu == NULL) 
+		goto exit1;
+	selected = menu_display(ctx, menu);
+	for(i = 0, entry = menu; i < selected; entry = entry->next, i++);
+	/* code to boot linux */
+	ctx->c_setenv("stdout", "vga");
+	{
+		char bootargs[100];
+		char outbuff[200];
+		char *args[3];
+		void *uImage = alloc_mem(ctx, 2*1024*1024);
+		void *uRamdisk = alloc_mem(ctx, 13*1024*1024);
+		args[0] = alloc_mem(ctx, 32);
+		args[1] = alloc_mem(ctx, 32);
+		args[2] = NULL;
+		ctx->c_sprintf(args[1], "%p", uImage);
+		ctx->c_sprintf(args[2], "%p", uRamdisk);
+/* 		ctx->c_video_clear(); */
+/* 		ctx->c_video_draw_text(7, 7, 0, "Booting linux ...", 66); */
+/* 		ctx->c_sprintf(bootargs, "%s quiet", ctx->c_getenv("bootargs")); */
+/* 		ctx->c_sprintf(bootargs, "%s", entry->append); */
+/* 		ctx->c_sprintf(outbuff, "Setting bootargs %s", bootargs); */
+/* 		ctx->c_video_draw_text(7, 9, 0, outbuff, 66); */
+/* 		ctx->c_setenv("bootargs", bootargs); */
+/* 		ctx->c_sprintf(outbuff, "Loading %s at %s ...", entry->kernel, args[0]); */
+/* 		ctx->c_video_draw_text(7, 10, 0, outbuff, 66); */
+		boot->load_file(boot, entry->kernel, uImage);
+		if(entry->initrd != NULL) {
+/* 			ctx->c_sprintf(outbuff, "Loading %s at %s ...", */
+/* 				       entry->initrd, args[1]); */
+/* 			ctx->c_video_draw_text(7, 11, 0, outbuff, 66); */
+			boot->load_file(boot, entry->initrd, uRamdisk);
+		}
+/* 		ctx->c_video_draw_text(7, 13, 0, "Boot!", 66); */
+		ctx->c_do_bootm(NULL, 0, 3, args);
+		return;
 	}
+
+  exit1:
+		boot->destroy(boot);
 
 	return 0;
 }
