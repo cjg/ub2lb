@@ -20,7 +20,7 @@
  * MA 02111-1307 USA
  */
 
-/* #include <support.h> */
+#include "support.h"
 #include "uboot.h"
 
 /* The version of context_t we hope to got from U-Boot */
@@ -35,9 +35,9 @@ typedef struct context {
 	list_t *c_devices_list;
 	SCAN_HANDLE c_curr_device;
 
-	 SCAN_HANDLE(*c_start_unit_scan) (const void *scan_list,
+	SCAN_HANDLE(*c_start_unit_scan) (const void *scan_list,
 					  uint32_t * const blocksize);
-	 SCAN_HANDLE(*c_next_unit_scan) (SCAN_HANDLE h,
+	SCAN_HANDLE(*c_next_unit_scan) (SCAN_HANDLE h,
 					 unsigned int *const blocksize);
 	int (*c_open_specific_unit) (const SCAN_HANDLE h);
 	void (*c_end_unit_scan) (SCAN_HANDLE h);
