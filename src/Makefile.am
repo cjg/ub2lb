@@ -6,6 +6,8 @@ OS4Bootloader_SOURCES=\
 	context.h\
 	uboot.h\
 	device.h\
+	ext2.h\
+	ext2.c\
 	menu.h\
 	menu.c\
 	support.h\
