@@ -20,7 +20,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "context.h"
 #include "ext2.h"
+
 #define RDB_ALLOCATION_LIMIT	16
 #define	IDNAME_RIGIDDISK	0x5244534B	/* "RDSK" */
 #define	IDNAME_PARTITION	0x50415254	/* "PART" */
@@ -104,32 +106,33 @@ struct amiga_part_geometry
 };
 
 
-static block_dev_desc_t *get_dev(context_t * ctx, int dev)
+static block_dev_desc_t *get_dev(int dev)
 {
 	block_dev_desc_t *bdev = NULL;
 	SCAN_HANDLE hnd;
 	uint32_t blocksize;
 
-	for (hnd = ctx->c_start_unit_scan(ctx->c_scan_list, &blocksize);
-	     hnd != NULL; hnd = ctx->c_next_unit_scan(hnd, &blocksize)) {
+	for (hnd = start_unit_scan(get_scan_list(), &blocksize);
+	     hnd != NULL; hnd = next_unit_scan(hnd, &blocksize)) {
 		if (hnd->ush_device.type == DEV_TYPE_HARDDISK) {
-			bdev = alloc_mem(ctx, sizeof(block_dev_desc_t));
-			memcpy(bdev, &hnd->ush_device, sizeof(block_dev_desc_t));
+			bdev = malloc(sizeof(block_dev_desc_t));
+			memmove(bdev, &hnd->ush_device, 
+				sizeof(block_dev_desc_t));
 			break;
 		}
 	}
 
-	ctx->c_end_unit_scan(hnd);
-	ctx->c_end_global_scan();
+	end_unit_scan(hnd);
+	end_global_scan();
 
 	return bdev;
 }
 
-struct RigidDiskBlock *get_rdisk(context_t *ctx, block_dev_desc_t *dev_desc)
+struct RigidDiskBlock *get_rdisk(block_dev_desc_t *dev_desc)
 {
 	int i;
 	char *s;
-	char *block_buffer = alloc_mem(ctx, dev_desc->blksz);
+	char *block_buffer = malloc(dev_desc->blksz);
 
 	for (i = 0; i < RDB_ALLOCATION_LIMIT; i++) {
 		unsigned res = dev_desc->block_read(dev_desc->dev, i, 1,
@@ -138,18 +141,18 @@ struct RigidDiskBlock *get_rdisk(context_t *ctx, block_dev_desc_t *dev_desc)
 			struct RigidDiskBlock *trdb = 
 				(struct RigidDiskBlock *)block_buffer;
 			if (trdb->rdb_ID == IDNAME_RIGIDDISK) {
-				ctx->c_printf("Rigid disk block at %d\n", i);
+				printf("Rigid disk block at %d\n", i);
 				/* here we should check the sum */
 				return trdb;
 			}
 		}
 	}
-	ctx->c_printf("Done scanning, no RDB found\n");
+	printf("Done scanning, no RDB found\n");
 	return NULL;
 }
 
 
-int get_partition_info (context_t *ctx, block_dev_desc_t *dev_desc, int part, 
+int get_partition_info (block_dev_desc_t *dev_desc, int part, 
 			disk_partition_t *info)
 {
 	int part_length;
@@ -159,9 +162,9 @@ int get_partition_info (context_t *ctx, block_dev_desc_t *dev_desc, int part,
 	struct amiga_part_geometry *g;
 	unsigned block, disk_type;
 
-	rdb = get_rdisk(ctx, dev_desc);
+	rdb = get_rdisk(dev_desc);
 	block = rdb->rdb_PartitionList;
-	block_buffer = alloc_mem(ctx, dev_desc->blksz);
+	block_buffer = malloc(dev_desc->blksz);
 	while (block != 0xFFFFFFFF) {
 		if (dev_desc->block_read(dev_desc->dev, block, 1,
 					 (unsigned *)block_buffer)) {
@@ -194,120 +197,72 @@ int get_partition_info (context_t *ctx, block_dev_desc_t *dev_desc, int part,
 	return 0;
 }
 
-static int do_ext2load (context_t *ctx, char *addr, char *filename, int dev, 
-			int part)
+static int do_ext2load (char *addr, char *filename, int dev, int part)
 {
 	unsigned part_length, filelen;
 	disk_partition_t info;
 	block_dev_desc_t *dev_desc = NULL;
 
-	dev_desc = get_dev(ctx, dev);
+	dev_desc = get_dev(dev);
 	if (dev_desc==NULL) {
-		ctx->c_printf ("\n** Block device %d not supported\n", dev);
+		printf ("\n** Block device %d not supported\n", dev);
 		return -1;
 	}
 
-	if (get_partition_info (ctx, dev_desc, part, &info)) {
-		ctx->c_printf ("** Bad partition %d **\n", part);
+	if (get_partition_info (dev_desc, part, &info)) {
+		printf ("** Bad partition %d **\n", part);
 		return -2;
 	}
 
-	if ((part_length = ctx->c_ext2fs_set_blk_dev_full(dev_desc, &info)) == 0) {
-		ctx->c_printf ("** Bad partition - %d:%d **\n",  dev, part);
-		ctx->c_ext2fs_close();
+	if ((part_length = ext2fs_set_blk_dev_full(dev_desc, &info)) == 0) {
+		printf ("** Bad partition - %d:%d **\n",  dev, part);
+		ext2fs_close();
 		return -3;
 	}
 
-	if (!ctx->c_ext2fs_mount(part_length)) {
-		ctx->c_printf ("** Bad ext2 partition or disk - %d:%d **\n",  
-			       dev, part);
-		ctx->c_ext2fs_close();
+	if (!ext2fs_mount(part_length)) {
+		printf ("** Bad ext2 partition or disk - %d:%d **\n",  
+			dev, part);
+		ext2fs_close();
 		return -4;
 	}
 
-	filelen = ctx->c_ext2fs_open(filename);
-	ctx->c_printf("filelen %d\n", filelen);
+	filelen = ext2fs_open(filename);
 	if (filelen < 0) {
-		ctx->c_printf("** File not found %s\n", filename);
-		ctx->c_ext2fs_close();
+		printf("** File not found %s\n", filename);
+		ext2fs_close();
 		return -5;
 	}
 
-	if (ctx->c_ext2fs_read((char *)addr, filelen) != filelen) {
-		ctx->c_printf("\n** Unable to read \"%s\" from %d:%d **\n", 
-			      filename, dev, part);
-		ctx->c_ext2fs_close();
+	if (ext2fs_read((char *)addr, filelen) != filelen) {
+		printf("\n** Unable to read \"%s\" from %d:%d **\n", 
+		       filename, dev, part);
+		ext2fs_close();
 		return -6;
 	}
 
-	ctx->c_ext2fs_close();
+	ext2fs_close();
 
 	return filelen;
 }
 
-static int load_file(ext2_boot_dev_t * this, char *filename, void *buffer)
+static int load_file(boot_dev_t * this, char *filename, void *buffer)
 {
-	return do_ext2load (this->ctx, buffer, filename, 0, 6);
+	return do_ext2load (buffer, filename, 0, 6);
 }
 
-static int destroy(ext2_boot_dev_t * this)
+static int destroy(boot_dev_t * this)
 {
-	free_mem(this->ctx, this);
+	free(this);
 }
 
-ext2_boot_dev_t *ext2_create(context_t * ctx, int partno)
+boot_dev_t *ext2_create(int discno, int partno)
 {
-	ext2_boot_dev_t *boot;
+	boot_dev_t *boot;
 	block_dev_desc_t *dev_desc;
-/* 	int part_length; */
-/* 	char *block_buffer;  */
-/* 	struct RigidDiskBlock *rdb; */
-/* 	struct PartitionBlock *p; */
-/* 	struct amiga_part_geometry *g; */
-/* 	disk_partition_t info; */
-/* 	unsigned block, disk_type; */
-
-	dev_desc = get_dev(ctx, 0);
-/* 	return NULL; */
-/* 	rdb = get_rdisk(ctx, dev_desc); */
-/* 	block = rdb->rdb_PartitionList; */
-/* 	block_buffer = alloc_mem(ctx, dev_desc->blksz); */
-/* 	while (block != 0xFFFFFFFF) { */
-/* 		if (dev_desc->block_read(dev_desc->dev, block, 1, */
-/* 					 (unsigned *)block_buffer)) { */
-/* 			p = (struct PartitionBlock *)block_buffer; */
-/* 			if (p->pb_ID == IDNAME_PARTITION){ */
-/* 				/\* here we should check the sum *\/ */
-/* 				if(partno-- == 0) */
-/* 					break; */
-/* 				block = p->pb_Next; */
-/* 			} else block = 0xFFFFFFFF; */
-/* 		} else block = 0xFFFFFFFF; */
-/* 	} */
-
-/* 	g = (struct amiga_part_geometry *)&(p->pb_Environment); */
-/* 	info.start = g->low_cyl  * g->block_per_track * g->surfaces; */
-/* 	info.size  = (g->high_cyl - g->low_cyl + 1) * g->block_per_track *  */
-/* 		g->surfaces - 1; */
-/* 	info.blksz = rdb->rdb_BlockBytes; */
-/* 	strcpy(info.name, p->pb_DriveName); */
-	
-/* 	disk_type = g->dos_type; */
-
-/* 	info.type[0] = (disk_type & 0xFF000000)>>24; */
-/* 	info.type[1] = (disk_type & 0x00FF0000)>>16; */
-/* 	info.type[2] = (disk_type & 0x0000FF00)>>8; */
-/* 	info.type[3] = '\\'; */
-/* 	info.type[4] = (disk_type & 0x000000FF) + '0'; */
-/* 	info.type[5] = 0; */
-
-	boot = alloc_mem(ctx, sizeof(ext2_boot_dev_t));
-	boot->ctx = ctx;
+	dev_desc = get_dev(0);
+	boot = malloc(sizeof(boot_dev_t));
 	boot->load_file = (int (*)(void *, char *, void *))load_file;
 	boot->destroy = (void (*)(void *))destroy;
-
-/* 	part_length = ctx->c_ext2fs_set_blk_dev_full(dev_desc, &info); */
-/* 	ctx->c_ext2fs_mount(part_length); */
-
 	return boot;
 }

@@ -1,25 +1,6 @@
 #ifndef SUPPORT_H_
 #define SUPPORT_H_
 
-/*
- * $Id: support.h 48 2008-03-19 23:27:08Z michalsc $
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
 typedef struct node {
 	struct node *n_succ, *n_pred;
 } node_t;
@@ -49,15 +30,15 @@ typedef signed short int16_t;
 typedef signed int int32_t;
 
 int strlen(const char *str);
-int isblank(char c);
-int isspace(char c);
-int isdigit(char c);
-int tolower(char c);
+/* int isblank(char c); */
+/* int isspace(char c); */
+/* int isdigit(char c); */
+/* int tolower(char c); */
 int strncasecmp(const char *s1, const char *s2, int max);
 int strcasecmp(const char *s1, const char *s2);
 int strncmp(const char *s1, const char *s2, int max);
 void bzero(void *dest, int length);
-void memcpy(void *dest, const void *src, int length);
+/* void memcpy(void *dest, const void *src, int length); */
 
 int StackSwap(struct StackSwapStruct *sss);
 
@@ -108,6 +89,7 @@ int StackSwap(struct StackSwapStruct *sss);
 /* 	while(*src != 0 && i++ < n) */
 /* 		*dest++ = *src++; */
 /* } */
-#define strcpy(D,S) memcpy((D), (S), strlen((S)) + 1)
-#define strncpy(D,S,N) memcpy((D), (S), (N))
+char *strcpy(char *dest, const char *src);
+char *strncpy(char *dest, const char *src, int n);
+
 #endif /*SUPPORT_H_ */

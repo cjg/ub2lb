@@ -37,8 +37,8 @@ typedef struct menu {
 #define ISBLANK(C) ((C) == ' ' || (C) == '\n' || (C) == '\r' || (C) == '\t')
 #define ISSPACE(C) ((C) == ' ' || (C) == '\t')
 
-static inline char *get_next_word(context_t * ctx, char *buffer,
-				  int buffer_length, int *buffer_offset)
+static inline char *get_next_word(char *buffer, int buffer_length, 
+				  int *buffer_offset)
 {
 	char *word;
 	int offset;
@@ -48,7 +48,7 @@ static inline char *get_next_word(context_t * ctx, char *buffer,
 	while (offset < buffer_length && !ISBLANK(buffer[offset]))
 		offset++;
 
-	word = alloc_mem(ctx, offset - *buffer_offset + 1);
+	word = malloc(offset - *buffer_offset + 1);
 	strncpy(word, buffer + *buffer_offset, offset - *buffer_offset);
 	word[offset - *buffer_offset] = 0;
 
@@ -57,8 +57,8 @@ static inline char *get_next_word(context_t * ctx, char *buffer,
 	return word;
 }
 
-static inline char *get_next_line(context_t * ctx, char *buffer,
-				  int buffer_length, int *buffer_offset)
+static inline char *get_next_line(char *buffer, int buffer_length, 
+				  int *buffer_offset)
 {
 	char *word;
 	int offset;
@@ -68,7 +68,7 @@ static inline char *get_next_line(context_t * ctx, char *buffer,
 	while (offset < buffer_length && buffer[offset] != '\n')
 		offset++;
 
-	word = alloc_mem(ctx, offset - *buffer_offset + 1);
+	word = malloc(offset - *buffer_offset + 1);
 	strncpy(word, buffer + *buffer_offset, offset - *buffer_offset);
 	word[offset - *buffer_offset] = 0;
 
@@ -77,34 +77,36 @@ static inline char *get_next_line(context_t * ctx, char *buffer,
 	return word;
 }
 
-static menu_t *entry_alloc(context_t * ctx)
+static menu_t *entry_alloc(void)
 {
 	menu_t *entry;
-	entry = alloc_mem(ctx, sizeof(menu_t));
+	entry = malloc(sizeof(menu_t));
 	entry->title = NULL;
 	entry->kernel = NULL;
 	entry->append = NULL;
 	entry->initrd = NULL;
+	entry->device_type = DEFAULT_TYPE;
+	entry->device_num = 0;
+	entry->partition = 0;
+	entry->server_ip = 0;
 	entry->next = NULL;
 	return entry;
 }
 
-static void entry_free(context_t * ctx, menu_t * self)
+static void entry_free(menu_t * entry)
 {
-	menu_t *entry;
-	entry = alloc_mem(ctx, sizeof(menu_t));
 	if (entry->title != NULL)
-		free_mem(ctx, entry->title);
+		free(entry->title);
 	if (entry->kernel != NULL)
-		free_mem(ctx, entry->kernel);
+		free(entry->kernel);
 	if (entry->append != NULL)
-		free_mem(ctx, entry->append);
+		free(entry->append);
 	if (entry->initrd != NULL)
-		free_mem(ctx, entry->initrd);
-	free_mem(ctx, entry);
+		free(entry->initrd);
+	free(entry);
 }
 
-menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
+menu_t *menu_load(boot_dev_t * boot)
 {
 	menu_t *self, *entry;
 	char *buffer;
@@ -113,7 +115,7 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 	int buffer_offset = 0;
 	int current_state;
 
-	buffer = alloc_mem(ctx, 0x1000);
+	buffer = malloc(0x1000);
 
 	if (buffer == NULL)
 		return NULL;
@@ -121,7 +123,7 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 	buffer_length = boot->load_file(boot, MENU_FILE, buffer);
 
 	if (buffer_length <= 0) {
-		free_mem(ctx, buffer);
+		free(buffer);
 		return NULL;
 	}
 
@@ -152,35 +154,31 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 		while (buffer_offset < buffer_length
 		       && ISSPACE(buffer[buffer_offset]))
 			buffer_offset++;
-		ctx->c_printf("current_state %d\n", current_state);
-/* 		ctx->c_printf("buffer: %s\n",  buffer + buffer_offset); */
-/* 		break; */
 		switch (current_state) {
 		case STATE_S:
-			entry = entry_alloc(ctx);
+			entry = entry_alloc();
 			if (buffer[buffer_offset] == '#') {
 				buffer_offset++;
 				current_state = STATE_C1;
 				break;
 			}
-			word = get_next_word(ctx, buffer, buffer_length,
+			word = get_next_word(buffer, buffer_length,
 					     &buffer_offset);
-/* 			ctx->c_printf("|%s|\n",  word); */
 			if (!strcasecmp(word, "title"))
 				current_state = STATE_T1;
 			else
 				current_state = -1;
-			free_mem(ctx, word);
+			free(word);
 			break;
 		case STATE_T1:
-			word = get_next_line(ctx, buffer, buffer_length,
+			word = get_next_line(buffer, buffer_length,
 					     &buffer_offset);
 			if (strlen(word) != 0) {
 				entry->title = word;
 				current_state = STATE_T2;
 			} else {
 				current_state = -1;
-				free_mem(ctx, word);
+				free(word);
 			}
 			break;
 		case STATE_T2:
@@ -189,25 +187,25 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 				current_state = STATE_C2;
 				break;
 			}
-			word = get_next_word(ctx, buffer, buffer_length,
+			word = get_next_word(buffer, buffer_length,
 					     &buffer_offset);
 			if (!strcasecmp(word, "kernel"))
 				current_state = STATE_K1;
 			else
 				current_state = -1;
-			free_mem(ctx, word);
+			free(word);
 			break;
 		case STATE_K1:
-			word = get_next_word(ctx, buffer, buffer_length,
+			word = get_next_word(buffer, buffer_length,
 					     &buffer_offset);
 			if (strlen(word) != 0) {
 				entry->kernel =
-				    alloc_mem(ctx, strlen(word) + 1);
+				    malloc(strlen(word) + 1);
 				strcpy(entry->kernel, word);
 				current_state = STATE_K2;
 			} else
 				current_state = -1;
-			free_mem(ctx, word);
+			free(word);
 			break;
 		case STATE_K2:
 			if (buffer[buffer_offset] == '#') {
@@ -215,15 +213,15 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 				current_state = STATE_C3;
 				break;
 			}
-			word = get_next_line(ctx, buffer, buffer_length,
+			word = get_next_line(buffer, buffer_length,
 					     &buffer_offset);
 			if (strlen(word) > 0) {
 				entry->append =
-				    alloc_mem(ctx, strlen(word) + 1);
+				    malloc(strlen(word) + 1);
 				strcpy(entry->append, word);
 
 			}
-			free_mem(ctx, word);
+			free(word);
 			current_state = STATE_I1;
 			break;
 		case STATE_I1:
@@ -232,7 +230,7 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 				current_state = STATE_C3;
 				break;
 			}
-			word = get_next_word(ctx, buffer, buffer_length,
+			word = get_next_word(buffer, buffer_length,
 					     &buffer_offset);
 			if (!strcasecmp(word, "initrd"))
 				current_state = STATE_I2;
@@ -242,7 +240,7 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 				current_state = STATE_I1;
 			else
 				current_state = -1;
-			free_mem(ctx, word);
+			free(word);
 			break;
 		case STATE_I2:
 			if (buffer[buffer_offset] == '#') {
@@ -250,14 +248,14 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 				current_state = STATE_C4;
 				break;
 			}
-			word = get_next_line(ctx, buffer, buffer_length,
+			word = get_next_line(buffer, buffer_length,
 					     &buffer_offset);
 			if (strlen(word) > 0) {
 				entry->initrd =
-				    alloc_mem(ctx, strlen(word) + 1);
+				    malloc(strlen(word) + 1);
 				strcpy(entry->initrd, word);
 			}
-			free_mem(ctx, word);
+			free(word);
 			current_state = STATE_A1;
 			break;
 		case STATE_C1:
@@ -277,54 +275,52 @@ menu_t *menu_load(context_t * ctx, boot_dev_t * boot)
 			current_state = -1;
 			break;
 		case STATE_A1:
-			ctx->c_printf("Accepted\n");
 			while (buffer[buffer_offset++] != '\n') ;
 			entry->next = self;
 			self = entry;
 			current_state = STATE_S;
 			break;
 		case STATE_A2:
-			ctx->c_printf("Accepted\n");
 			entry->next = self;
 			self = entry;
-			entry = entry_alloc(ctx);
+			entry = entry_alloc();
 			current_state = STATE_T1;
 			break;
 		default:
 			while (buffer_offset < buffer_length
 			       && buffer[buffer_offset++] != '\n') ;
-			entry_free(ctx, entry);
+			entry_free(entry);
 			current_state = STATE_S;
 			break;
 		}
 	}
 
-	free_mem(ctx, buffer);
+	free(buffer);
 	return self;
 }
 
-void display(context_t * ctx, menu_t * self, int selected)
+void display(menu_t * self, int selected)
 {
 	int i = 0;
 	menu_t *entry;
 	char buff[100];
 
 	for (entry = self; entry != NULL; entry = entry->next, i++) {
-		ctx->c_sprintf(buff, "%d. %s", i, entry->title);
-		ctx->c_video_draw_text(0, 5 + i, (i == selected ? 2 : 0), buff,
-				       80);
+		sprintf(buff, "%d. %s", i, entry->title);
+		video_draw_text(0, 5 + i, (i == selected ? 2 : 0), buff,
+				80);
 	}
 }
 
-int menu_display(context_t * ctx, menu_t * self)
+int menu_display(menu_t * self)
 {
 	int key, max, selected = 0;
 	menu_t *entry;
 	for(max = -1, entry = self; entry != NULL; entry = entry->next, max++);
 	
 	while (1) {
-		display(ctx, self, selected);
-		key = ctx->c_video_get_key();
+		display(self, selected);
+		key = video_get_key();
 		if (key == 4 && selected > 0)
 			selected--;
 		if (key == 3 && selected < max)
@@ -336,12 +332,12 @@ int menu_display(context_t * ctx, menu_t * self)
 	return 0;
 }
 
-void menu_free(context_t * ctx, menu_t * self)
+void menu_free(menu_t * self)
 {
 	menu_t *entry;
 	while (self != NULL) {
 		entry = self;
 		self = self->next;
-		entry_free(ctx, self);
+		entry_free(self);
 	}
 }

@@ -27,17 +27,25 @@
 #include "device.h"
 
 #define MENU_FILE "menu.lst"
+#define DEFAULT_TYPE 0
+#define HD_TYPE      1
+#define TFTP_TYPE    2
+#define CD_TYPE      3
 
 typedef struct menu {
 	char *title;
 	char *kernel;
 	char *append;
 	char *initrd;
+	int device_type;
+	int device_num;
+	int partition;
+	char *server_ip;
 	struct menu *next;
 } menu_t;
 
-menu_t *menu_load(context_t * ctx, boot_dev_t * boot);
-int menu_display(context_t * ctx, menu_t * self);
-void menu_free(context_t * ctx, menu_t * self);
+menu_t *menu_load(boot_dev_t * boot);
+int menu_display(menu_t * self);
+void menu_free(menu_t * self);
 
 #endif /* _MENU_H */

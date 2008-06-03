@@ -1,4 +1,5 @@
-#include <support.h>
+#include "context.h"
+#include "support.h"
 
 int strlen(const char *str)
 {
@@ -62,14 +63,25 @@ void bzero(void *dest, int length)
 		*d++ = 0;
 }
 
-void memcpy(void *dest, const void *src, int length)
+char *strcpy(char *dest, const char *src) 
 {
-	const char *s = src;
-	char *d = dest;
+	return (char *) memmove(dest, src, strlen(src) + 1);
 
-	while (length--)
-		*d++ = *s++;
 }
+
+char *strncpy(char *dest, const char *src, int n)
+{
+	return (char *) memmove(dest, src, n);
+}
+
+/* void memcpy(void *dest, const void *src, int length) */
+/* { */
+/* 	const char *s = src; */
+/* 	char *d = dest; */
+
+/* 	while (length--) */
+/* 		*d++ = *s++; */
+/* } */
 
 int StackSwap(struct StackSwapStruct *sss)
 {
