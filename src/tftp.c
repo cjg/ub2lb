@@ -22,24 +22,23 @@
 
 #include "tftp.h"
 
-static int load_file(tftp_boot_dev_t * this, char *filename, void *buffer)
+static int load_file(boot_dev_t * this, char *filename, void *buffer)
 {
-	return this->ctx->c_my_netloop(filename, buffer);
+	return netloop(filename, buffer);
 }
 
-static int destroy(tftp_boot_dev_t * this)
+static int destroy(boot_dev_t * this)
 {
-	free_mem(this->ctx, this);
+	free(this);
 }
 
-tftp_boot_dev_t *tftp_create(context_t * ctx)
+boot_dev_t *tftp_create(void)
 {
-	tftp_boot_dev_t *boot = alloc_mem(ctx, sizeof(boot_dev_t));
+	boot_dev_t *boot = malloc(sizeof(boot_dev_t));
 
 	if (boot == NULL)
 		return NULL;
 
-	boot->ctx = ctx;
 	boot->load_file = (int (*)(void *, char *, void *))load_file;
 	boot->destroy = (void (*)(void *))destroy;
 

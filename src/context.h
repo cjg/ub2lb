@@ -20,7 +20,7 @@
  * MA 02111-1307 USA
  */
 
-#include "support.h"
+/* #include "support.h" */
 #include "uboot.h"
 
 /* The version of context_t we hope to got from U-Boot */
@@ -96,14 +96,66 @@ typedef struct context {
 	int (*c_ext2fs_close) (void);
 } context_t;
 
-static inline void *alloc_mem(context_t * ctx, int size)
-{
-	return ctx->c_alloc_mem_for_anythingelse(size);
-}
+void context_init(context_t *ctx);
+inline context_t *context_get(void);
 
-static inline void free_mem(context_t * ctx, void *ptr)
-{
-	return ctx->c_free_mem(ptr);
-}
+/* terminal IO functions */
+#define printf(FMT, ARGS...) context_get()->c_printf((FMT), ##ARGS)
+inline int getc(void);
+
+/* devices functions */
+inline void *get_scan_list(void);
+inline list_t *get_devices_list(void);
+inline SCAN_HANDLE get_curr_device(void);
+inline SCAN_HANDLE start_unit_scan(const void *scan_list,
+				   uint32_t * const blocksize);
+inline SCAN_HANDLE next_unit_scan(SCAN_HANDLE h,
+				  unsigned int *const blocksize);
+inline int open_specific_unit(const SCAN_HANDLE h);
+inline void end_unit_scan(SCAN_HANDLE h);
+inline void end_global_scan(void);
+inline int loadsector(const unsigned int sectn,
+		      const unsigned int sect_size,
+		      const unsigned int numb_sects,
+		      void *const dest_buf);
+inline int netloop(char *filename, void *dump_here);
+
+/* memory functions */
+inline void *malloc(int size);
+inline void free(void *ptr);
+inline void *memmove(void *dest, const void *src, int count);
+
+/* ENV functions */
+inline char *getenv(unsigned char *var);
+inline void setenv(char *var, char *value);
+
+/* misc functions */
+inline int tstc(void);
+inline void udelay(unsigned long t);
+#define sprintf(BUF, FMT, ARGS...) context_get()->c_sprintf((BUF), (FMT), ##ARGS)
+
+/* video functions */
+inline void video_clear(void);
+inline void video_draw_box(int style, int attr, char *title, int separate, 
+			   int x, int y, int w, int h);
+inline void video_draw_text(int x, int y, int attr, char *text, int field);
+inline void video_repeat_char(int x, int y, int repcnt, int repchar, int attr);
+inline unsigned short video_set_partial_scroll_limits(const short start,
+						      const short end);
+inline void video_get_partial_scroll_limits(short *const start, 
+					    short *const end);
+inline int video_get_key(void);
+
+/* ext2fs functions */
+inline int ext2fs_set_blk_dev_full(block_dev_desc_t * const rbdd,
+				   disk_partition_t * const p);
+inline int ext2fs_open(char *filename);
+inline int ext2fs_read(char *buf, unsigned len);
+inline int ext2fs_mount(unsigned part_length);
+inline int ext2fs_close(void);
+
+/* booting functions */
+inline int bootm(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
+inline void set_load_addr(void *const la);
 
 #endif /*CONTEXT_H_ */

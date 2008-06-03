@@ -26,12 +26,6 @@
 #include "context.h"
 #include "device.h"
 
-typedef struct {
-	int (*load_file) (void *this, char *filename, void *buffer);
-	void (*destroy) (void *this);
-	context_t *ctx;
-} tftp_boot_dev_t;
-
-tftp_boot_dev_t *tftp_create(context_t * ctx);
+boot_dev_t *tftp_create(void);
 
 #endif /* _TFTP_H */

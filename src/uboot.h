@@ -79,7 +79,7 @@ typedef struct block_dev_desc {
 #define DEV_TYPE_NETBOOT        0x81	/* Netboot through TFTP */
 
 typedef struct disk_partition {
-	uint32_t start;		/* # of first block in partition        */
+	unsigned start;		/* # of first block in partition        */
 	uint32_t size;		/* number of blocks in partition        */
 	uint32_t blksz;		/* block size in bytes                  */
 	uint8_t name[32];	/* partition name                       */

@@ -23,15 +23,8 @@
 #ifndef _EXT2_H
 #define _EXT2_H
 
-#include "context.h"
 #include "device.h"
 
-typedef struct {
-	int (*load_file) (void *this, char *filename, void *buffer);
-	void (*destroy) (void *this);
-	context_t *ctx;
-} ext2_boot_dev_t;
-
-ext2_boot_dev_t *ext2_create(context_t * ctx, int partno);
+boot_dev_t *ext2_create(int discno, int partno);
 
 #endif /* _EXT2_H */
