@@ -55,6 +55,13 @@ int strncmp(const char *s1, const char *s2, int max)
 	return diff;
 }
 
+int strcmp(const char *s1, const char *s2)
+{
+	int diff = 0;
+	for (; !(diff = *s2 - *s1) && *s1; s1++, s2++) ;
+	return diff;
+}
+
 void bzero(void *dest, int length)
 {
 	char *d = dest;
@@ -123,4 +130,52 @@ int StackSwap(struct StackSwapStruct *sss)
 	asm volatile ("wrteei 1");
 
 	return 0;
+}
+
+void *calloc(int size, int n)
+{
+	return malloc(size * n);
+}
+
+void *memcpy(void *dest, const void *src, int n)
+{
+	return memmove(dest, src, n);
+}
+
+void *memset(void *dest, int c, int n)
+{
+	char *ptr = (char *) dest;
+
+	while (n-- > 0)
+		*ptr++ = c;
+	
+	return dest;
+}
+
+char *strchr(char *s, int c)
+{
+	char *sptr;
+	for(sptr = s; *sptr != 0 && *sptr != c; sptr++);
+	if(*sptr == 0)
+		return NULL;
+	return sptr;
+}
+
+char *strdup(const char *s)
+{
+	char *dup;
+	dup = malloc(strlen(s) + 1);
+	strcpy(dup, s);
+	return dup;
+}
+
+int strtol(const char *s)
+{
+	int l, i, m;
+	l = 0;
+	for(i = strlen(s) - 1, m = 1; i >= 0; i--, m*=10) {
+		l += (s[i] - 48) * m;
+		
+	}
+	return l;
 }
