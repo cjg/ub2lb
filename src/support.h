@@ -30,15 +30,15 @@ typedef signed short int16_t;
 typedef signed int int32_t;
 
 int strlen(const char *str);
-/* int isblank(char c); */
-/* int isspace(char c); */
-/* int isdigit(char c); */
-/* int tolower(char c); */
+int isblank(char c);
+int isspace(char c);
+int isdigit(char c);
+int tolower(char c);
 int strncasecmp(const char *s1, const char *s2, int max);
 int strcasecmp(const char *s1, const char *s2);
 int strncmp(const char *s1, const char *s2, int max);
+int strcmp(const char *s1, const char *s2);
 void bzero(void *dest, int length);
-/* void memcpy(void *dest, const void *src, int length); */
 
 int StackSwap(struct StackSwapStruct *sss);
 
@@ -77,19 +77,14 @@ int StackSwap(struct StackSwapStruct *sss);
 #define KRN_ARGC                (KRN_Dummy + 17)
 #define KRN_ARGV                (KRN_Dummy + 18)
 
-/* static inline strcpy(char *dest, const char *src)  */
-/* { */
-/* 	while(*src != 0) */
-/* 		*dest++ = *src++; */
-/* } */
-
-/* static inline strncpy(char *dest, const char *src, int n)  */
-/* { */
-/* 	int i; */
-/* 	while(*src != 0 && i++ < n) */
-/* 		*dest++ = *src++; */
-/* } */
 char *strcpy(char *dest, const char *src);
 char *strncpy(char *dest, const char *src, int n);
+char *strchr(char *s, int c);
+char *strdup(const char *s);
+int strtol(const char *s);
+
+void *calloc(int size, int n);
+void *memcpy(void *dest, const void *src, int n);
+void *memset(void *s, int c, int n);
 
 #endif /*SUPPORT_H_ */

@@ -74,7 +74,7 @@ int __startup bootstrap(context_t * ctx)
 	int i, selected;
 	clear_bss();
 	context_init(ctx);
-/* /\* 	ctx->c_setenv("stdout", "serial"); *\/ */
+	ctx->c_setenv("stdout", "serial");
 	video_clear();
 	video_draw_text(0, 3, 0, "I'm ub2lb (Parthenope)", 80);
 	video_draw_text(0, 4, 0, "Booting from ...", 80);
@@ -85,52 +85,34 @@ int __startup bootstrap(context_t * ctx)
 		return 0;
 	menu = menu_load(boot);
 	selected = menu_display(menu);
-/* /\* 	for(i = 0, entry = menu; i < selected; entry = entry->next, i++); *\/ */
-/* /\* 	/\\* code to boot linux *\\/ *\/ */
-/* /\* 	ctx->c_setenv("stdout", "vga"); *\/ */
-/* 	{ */
-/* /\* 		char bootargs[100]; *\/ */
-/* 		char outbuff[200]; */
-/* 		char *args[3]; */
-/* 		void *uImage = malloc(3*1024*1024); */
-/* 		void *uRamdisk = malloc(4*1024*1024); */
-/* 		boot = ext2_create(0, 6); */
-/* /\* 		return; *\/ */
-/* 		boot->load_file(boot, "uRamdisk", uRamdisk); */
-/* 		boot->load_file(boot, "uImage", uImage); */
-/* /\* 		boot->load_file(boot, "uRamdisk", uRamdisk); *\/ */
-/* /\* 		ctx->c_sprintf(outbuff, "%lX", filelen); *\/ */
-/* /\* 		ctx->c_setenv("filesize", outbuff); *\/ */
-/* 		printf("%p\n", uImage); */
-/* /\*  		ctx->c_do_bootm(NULL, 0, 0, NULL); *\/ */
-/* 		args[0] = "bootm"; */
-/* 		args[1] = malloc(32); */
-/* 		args[2] = malloc(32); */
-/* 		sprintf(args[1], "%p", uImage); */
-/* 		sprintf(args[2], "%p", uRamdisk); */
-/* /\* 		ctx->c_video_clear(); *\/ */
-/* /\* 		ctx->c_video_draw_text(7, 7, 0, "Booting linux ...", 66); *\/ */
-/* /\* 		ctx->c_sprintf(bootargs, "%s quiet", ctx->c_getenv("bootargs")); *\/ */
-/* /\* 		ctx->c_sprintf(bootargs, "%s", entry->append); *\/ */
-/* /\* 		ctx->c_sprintf(outbuff, "Setting bootargs %s", bootargs); *\/ */
-/* /\* 		ctx->c_video_draw_text(7, 9, 0, outbuff, 66); *\/ */
-/* /\* 		ctx->c_setenv("bootargs", bootargs); *\/ */
-/* /\* 		ctx->c_sprintf(outbuff, "Loading %s at %s ...", entry->kernel, args[0]); *\/ */
-/* /\* 		ctx->c_video_draw_text(7, 10, 0, outbuff, 66); *\/ */
-/* /\* 		boot->load_file(boot, entry->kernel, uImage); *\/ */
-/* /\* 		if(entry->initrd != NULL) { *\/ */
-/* /\* 			ctx->c_sprintf(outbuff, "Loading %s at %s ...", *\/ */
-/* /\* 				       entry->initrd, args[1]); *\/ */
-/* /\* 			ctx->c_video_draw_text(7, 11, 0, outbuff, 66); *\/ */
-/* /\* 			boot->load_file(boot, entry->initrd, uRamdisk); *\/ */
-/* /\* 		} *\/ */
-/* /\* 		ctx->c_video_draw_text(7, 13, 0, "Boot!", 66); *\/ */
-/* 		bootm(NULL, 0, 3, args); */
-/* 		return; */
-/* 	} */
+	for(i = 0, entry = menu; i < selected; entry = entry->next, i++);
+	printf("We should boot %s:\n\t%s %s\n\t%s\n", entry->title,
+	       entry->kernel, entry->append, entry->initrd);
+	/* code to boot linux */
+	ctx->c_setenv("stdout", "vga");
+	{
+		char *args[3];
+		void *uImage = malloc(3*1024*1024);
+		void *uRamdisk = malloc(4*1024*1024);
+		if(entry->device_type == IDE_TYPE)
+			boot = ext2_create(entry->device_num, 
+					   entry->partition);
+		else if(entry->device_type == TFTP_TYPE)
+			boot = tftp_create();
+		boot->load_file(boot, entry->initrd, uRamdisk);
+		boot->load_file(boot, entry->kernel, uImage);
+		setenv("bootargs", entry->append);
+		args[0] = "bootm";
+		args[1] = malloc(32);
+		args[2] = malloc(32);
+		sprintf(args[1], "%p", uImage);
+		sprintf(args[2], "%p", uRamdisk);
+		bootm(NULL, 0, 3, args);
+		return 0;
+	}
 
-/*   exit1: */
-/* 		boot->destroy(boot); */
+  exit1:
+		boot->destroy(boot);
 
 	return 0;
 }

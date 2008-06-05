@@ -28,7 +28,7 @@
 
 #define MENU_FILE "menu.lst"
 #define DEFAULT_TYPE 0
-#define HD_TYPE      1
+#define IDE_TYPE      1
 #define TFTP_TYPE    2
 #define CD_TYPE      3
 
