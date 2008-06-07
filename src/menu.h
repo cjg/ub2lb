@@ -46,12 +46,14 @@ typedef struct menu {
 	int device_type;
 	int device_num;
 	int partition;
+	int default_os;
+	int delay;
 	char *server_ip;
 	struct menu *next;
 } menu_t;
 
 menu_t *menu_load(boot_dev_t * boot);
-int menu_display(menu_t * self);
+menu_t * menu_display(menu_t * self);
 void menu_free(menu_t * self);
 
 #endif /* _MENU_H */

@@ -66,7 +66,8 @@ static void entry_free(menu_t * entry)
 	/* FIXME: free modules and args */
 	free(entry);
 }
-enum states {S, TIT, IN, RT, K, RD, M, A, R, AQ, RQ};
+
+enum states {S, DEF, DLY, TIT, IN, RT, K, RD, M, A, R, AQ, RQ};
 
 char *getline(char *src, int src_len, int *src_offset)
 {
@@ -157,9 +158,11 @@ static menu_t *fsm(char *buffer, int buffer_len)
 	char *word;
 	char *lineptr;
 	int status;
-	menu_t *menu, *entry;
+	menu_t *menu, *entry, *ptr;
 	
-	menu = NULL;
+	menu = entry_alloc();
+	menu->default_os = 0;
+	menu->delay = 5;
 	line = NULL;
 	offset = 0;
 	status = S;
@@ -183,8 +186,36 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			if(strcmp(word, "title") == 0) {
 				status = TIT;
 				lineptr = line + strlen(word);
+			} else if (strcmp(word, "default") == 0) {
+				status = DEF;
+				lineptr = line + strlen(word);
+			} else if (strcmp(word, "delay") == 0) {
+				status = DLY;
+				lineptr = line + strlen(word);
 			} else
 				status = S;
+			free(word);
+			break;
+		case DEF:
+			status = S;
+			if(strlen(lineptr) == 0) 
+				break;
+			strtrim(lineptr);
+			word = getnextword(lineptr);
+			if(strlen(word) == 0) 
+				break;
+			menu->default_os = strtol(word);
+			free(word);
+			break;
+		case DLY:
+			status = S;
+			if(strlen(lineptr) == 0) 
+				break;
+			strtrim(lineptr);
+			word = getnextword(lineptr);
+			if(strlen(word) == 0) 
+				break;
+			menu->delay = strtol(word);
 			free(word);
 			break;
 		case TIT:
@@ -326,8 +357,8 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			free(word);
 			break;
 		case A:
-			entry->next = menu;
-			menu = entry;
+			for(ptr = menu; ptr->next != NULL; ptr=ptr->next);
+			ptr->next = entry;
 			status = S;
 			break;
 		case R:
@@ -335,8 +366,8 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			status = S;
 			break;
 		case AQ:
-			entry->next = menu;
-			menu = entry;
+			for(ptr = menu; ptr->next != NULL; ptr=ptr->next);
+			ptr->next = entry;
 			return menu;
 			break;
 		case RQ:
@@ -377,37 +408,67 @@ menu_t *menu_load(boot_dev_t * boot)
 	return self;
 }
 
-void display(menu_t * self, int selected)
+menu_t *display(menu_t * self, int selected)
 {
 	int i = 0;
-	menu_t *entry;
+	menu_t *entry, *sentry;
 	char buff[100];
 
-	for (entry = self; entry != NULL; entry = entry->next, i++) {
-		sprintf(buff, "%d. %s", i, entry->title);
-		video_draw_text(0, 5 + i, (i == selected ? 2 : 0), buff,
-				80);
+
+	video_draw_box(1, 0, "Select boot option.", 1, 5, 5, 70, 15); 
+
+	for (entry = self->next; entry != NULL; entry = entry->next, i++) {
+		sprintf(buff, " %s", entry->title);
+		video_draw_text(6, 8 + i, (i == selected ? 2 : 0), buff,
+				68);
+		if(i == selected)
+			sentry = entry;
 	}
+
+	return sentry;
 }
 
-int menu_display(menu_t * self)
+menu_t *menu_display(menu_t * self)
 {
-	int key, max, selected = 0;
+	int key, max, selected, delay, old_delay;
 	menu_t *entry;
-	for(max = -1, entry = self; entry != NULL; entry = entry->next, max++);
+	for(max = -2, entry = self; entry != NULL; entry = entry->next, max++);
+
+	selected = self->default_os <= max ? self->default_os : max;
+	delay = self->delay * 100;
 	
-	while (1) {
-		display(self, selected);
+	entry = display(self, selected);
+	while (delay) {
+		if(old_delay != delay / 100) {
+			char tmp[30];
+			int chr;
+			sprintf(tmp, "(%d seconds left)", delay / 100);
+			video_draw_text(54, 6, 0, tmp, 20);
+			old_delay = delay / 100;
+		}
+		if(tstc())
+			break;
+		udelay(10000);
+		delay--;
+	}
+
+	if(delay == 0)
+		return entry;
+ 
+	while(1) {
+		entry = display(self, selected);
 		key = video_get_key();
 		if (key == 4 && selected > 0)
 			selected--;
 		if (key == 3 && selected < max)
 			selected++;
-		if (key == 1 || key == 6)
-			return selected;
+		if (key == 117) 
+			break;
+		if (key == 1 || key == 6) 
+			return entry;
 	}
 
-	return 0;
+	return NULL;
 }
 
 void menu_free(menu_t * self)
