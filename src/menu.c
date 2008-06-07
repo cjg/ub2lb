@@ -267,7 +267,6 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			}
 			lineptr = lineptr + strlen(word);
 			strtrim(lineptr);
-			/* accept tftp or ide */
 			if(strcmp(word, "tftp") == 0) {
 				if(strlen(lineptr) == 0) {
 					status = R;
@@ -276,6 +275,17 @@ static menu_t *fsm(char *buffer, int buffer_len)
 					break;
 				}
 				entry->device_type = TFTP_TYPE;
+				free(word);
+				free(line);
+				status = IN;
+			} else if(strcmp(word, "cdrom") == 0) {
+				if(strlen(lineptr) == 0) {
+					status = R;
+					free(word);
+					free(line);
+					break;
+				}
+				entry->device_type = CD_TYPE;
 				free(word);
 				free(line);
 				status = IN;
