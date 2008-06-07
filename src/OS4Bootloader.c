@@ -251,12 +251,24 @@ int __startup bootstrap(context_t * ctx)
 	
 	for(i = 0, entry = menu; i < selected; entry = entry->next, i++);
 
-	if(entry->device_type == IDE_TYPE)
+	switch(entry->device_type) {
+	case IDE_TYPE:
 		boot = ext2_create(entry->device_num, 
 				   entry->partition);
-	else if(entry->device_type == TFTP_TYPE)
+		break;
+	case TFTP_TYPE:
 		boot = tftp_create();
-	
+		break;
+	case CD_TYPE:
+		boot = cdrom_create();
+		break;
+	}
+
+	if(boot == NULL) {
+		setenv("stdout", "vga");
+		return 2;
+	}
+
 	void *kernel = malloc(3*1024*1024);
 	if(boot->load_file(boot, entry->kernel, kernel) < 0)
 		return 1;

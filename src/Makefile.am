@@ -3,6 +3,7 @@ EXTRA_DIST=ldscript.lds
 bin_PROGRAMS=OS4Bootloader
 
 OS4Bootloader_SOURCES=\
+	cdrom.c\
 	context.h\
 	context.c\
 	uboot.h\
