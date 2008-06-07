@@ -141,8 +141,7 @@ struct RigidDiskBlock *get_rdisk(block_dev_desc_t *dev_desc)
 			struct RigidDiskBlock *trdb = 
 				(struct RigidDiskBlock *)block_buffer;
 			if (trdb->rdb_ID == IDNAME_RIGIDDISK) {
-				printf("Rigid disk block at %d\n", i);
-				/* here we should check the sum */
+				/* TODO: here we should check the sum */
 				return trdb;
 			}
 		}
@@ -170,7 +169,7 @@ int get_partition_info (block_dev_desc_t *dev_desc, int part,
 					 (unsigned *)block_buffer)) {
 			p = (struct PartitionBlock *)block_buffer;
 			if (p->pb_ID == IDNAME_PARTITION){
-				/* here we should check the sum */
+				/* TODO: here we should check the sum */
 				if(part-- == 0)
 					break;
 				block = p->pb_Next;
@@ -260,7 +259,9 @@ boot_dev_t *ext2_create(int discno, int partno)
 {
 	boot_dev_t *boot;
 	block_dev_desc_t *dev_desc;
-	dev_desc = get_dev(0);
+	dev_desc = get_dev(discno);
+	if(dev_desc == NULL)
+		return NULL;
 	boot = malloc(sizeof(boot_dev_t));
 	boot->load_file = (int (*)(void *, char *, void *))load_file;
 	boot->destroy = (void (*)(void *))destroy;

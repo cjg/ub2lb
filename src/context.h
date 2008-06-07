@@ -20,7 +20,6 @@
  * MA 02111-1307 USA
  */
 
-/* #include "support.h" */
 #include "uboot.h"
 
 /* The version of context_t we hope to got from U-Boot */

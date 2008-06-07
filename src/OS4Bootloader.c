@@ -25,6 +25,7 @@
 #include "menu.h"
 #include "elf.h"
 #include "image.h"
+#include "cdrom.h"
 
 extern unsigned long __bss_start;
 extern unsigned long _end;
@@ -151,7 +152,7 @@ void testboot_aros(menu_t *menu, void *kernel, boot_dev_t *boot)
 	max_entries = menu->modules_cnt + 1;
 	sprintf(tmpbuf, "Booting %s", menu->title);
 	video_clear();
-        video_set_partial_scroll_limits(10, 20);
+        video_set_partial_scroll_limits(12, 25);
                     
 	video_draw_box(1, 0, tmpbuf, 1, 5, 4, 70, 7);
 	set_progress(1);
@@ -234,7 +235,7 @@ int __startup bootstrap(context_t * ctx)
 	clear_bss();
 	
 	context_init(ctx);
-	
+
 	setenv("stdout", "serial");
 	
 	video_clear();
@@ -244,7 +245,7 @@ int __startup bootstrap(context_t * ctx)
 	boot = get_booting_device();
 
 	if (boot == NULL)
-		return 0;
+		goto exit;
 	
 	menu = menu_load(boot);
 	selected = menu_display(menu);
@@ -264,10 +265,8 @@ int __startup bootstrap(context_t * ctx)
 		break;
 	}
 
-	if(boot == NULL) {
-		setenv("stdout", "vga");
-		return 2;
-	}
+	if(boot == NULL)
+		goto exit;
 
 	void *kernel = malloc(3*1024*1024);
 	if(boot->load_file(boot, entry->kernel, kernel) < 0)
@@ -277,6 +276,10 @@ int __startup bootstrap(context_t * ctx)
 	testboot_aros(entry, kernel, boot);
 
 	free(kernel);
+
 	boot->destroy(boot);
+  exit:
+	video_get_key();
+	setenv("stdout", "vga");
 	return 0;
 }

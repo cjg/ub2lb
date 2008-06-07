@@ -471,6 +471,8 @@ static block_dev_desc_t *get_dev()
 	SCAN_HANDLE hnd;
 	uint32_t blocksize;
 
+	start_unit_scan(NULL, &blocksize);
+
 	for (hnd = start_unit_scan(get_scan_list(), &blocksize);
 	     hnd != NULL; hnd = next_unit_scan(hnd, &blocksize)) {
 		if (hnd->ush_device.type == DEV_TYPE_CDROM) {

@@ -4,21 +4,22 @@ bin_PROGRAMS=OS4Bootloader
 
 OS4Bootloader_SOURCES=\
 	cdrom.c\
-	context.h\
+	cdrom.h\
 	context.c\
+	context.h\
 	uboot.h\
 	device.h\
 	elf.c\
 	elf.h\
-	ext2.h\
 	ext2.c\
+	ext2.h\
 	image.h\
-	menu.h\
 	menu.c\
-	support.h\
+	menu.h\
 	support.c\
-	tftp.h\
+	support.h\
 	tftp.c\
+	tftp.h\
 	OS4Bootloader.c
 
 OS4Bootloader_LDFLAGS = -nostartfiles -nodefaultlibs -static -Wl,-s -Wl,-N -Wl,--entry=bootstrap -Wl,--script=ldscript.lds
