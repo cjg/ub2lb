@@ -410,20 +410,32 @@ menu_t *menu_load(boot_dev_t * boot)
 
 menu_t *display(menu_t * self, int selected)
 {
-	int i = 0;
+	int i;
 	menu_t *entry, *sentry;
 	char buff[100];
-
+	static int first = 0, last = 10;
 
 	video_draw_box(1, 0, "Select boot option.", 1, 5, 5, 70, 15); 
 
-	for (entry = self->next; entry != NULL; entry = entry->next, i++) {
+	if(selected < first)
+		first--;
+
+	if(selected > last)
+		first++;
+
+	for(i = 0; i < first; i++)
+		self = self->next;
+
+	for (i = 0, entry = self->next; entry != NULL && i < 11; 
+	     entry = entry->next, i++) {
 		sprintf(buff, " %s", entry->title);
-		video_draw_text(6, 8 + i, (i == selected ? 2 : 0), buff,
+		video_draw_text(6, 8 + i, (i + first == selected ? 2 : 0), buff,
 				68);
-		if(i == selected)
+		if(i + first == selected)
 			sentry = entry;
 	}
+
+	last = first + i - 1;
 
 	return sentry;
 }
@@ -441,7 +453,6 @@ menu_t *menu_display(menu_t * self)
 	while (delay) {
 		if(old_delay != delay / 100) {
 			char tmp[30];
-			int chr;
 			sprintf(tmp, "(%d seconds left)", delay / 100);
 			video_draw_text(54, 6, 0, tmp, 20);
 			old_delay = delay / 100;
