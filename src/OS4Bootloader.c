@@ -61,33 +61,24 @@ static void flush_cache(char *start, char *end)
 
 static boot_dev_t *get_booting_device(void)
 {
-	boot_dev_t *dev = NULL;
 	SCAN_HANDLE hnd;
-	uint32_t blocksize;
+	
+	hnd = get_curr_device();
 
-	for (hnd = start_unit_scan(get_scan_list(), &blocksize);
-	     hnd != NULL; hnd = next_unit_scan(hnd, &blocksize)) {
-		if (hnd->ush_device.type == DEV_TYPE_NETBOOT) {
-			dev = tftp_create();
-			video_draw_text(17, 4, 0, "TFTP", 80);
-		}
-
-		if (dev == NULL)
-			continue;
+	switch(hnd->ush_device.type) {
+	case DEV_TYPE_HARDDISK:
+		/* FIXME: make this code really be runned */
+		return ext2_create(hnd->ush_device.dev, 0);
+		break;
+	case DEV_TYPE_NETBOOT:
+		return tftp_create();
+		break;
+	case DEV_TYPE_CDROM:
+		return cdrom_create();
+		break;
 	}
 
-	end_unit_scan(hnd);
-	end_global_scan();
-
-	if (dev == NULL) {
-		hnd = get_curr_device();
-		if (hnd->ush_device.type == DEV_TYPE_NETBOOT) {
-			dev = tftp_create();
-			video_draw_text(17, 4, 0, "TFTP", 80);
-		}
-	}
-
-	return dev;
+	return NULL;
 }
 
 void testboot_linux(menu_t *entry, void *kernel, boot_dev_t *dev)
@@ -239,8 +230,7 @@ int __startup bootstrap(context_t * ctx)
 	setenv("stdout", "serial");
 	
 	video_clear();
-	video_draw_text(0, 3, 0, "I'm ub2lb (Parthenope)", 80);
-	video_draw_text(0, 4, 0, "Booting from ...", 80);
+	video_draw_text(5, 4, 0, " Parthenope (ub2lb) version 0.01", 80);
 
 	boot = get_booting_device();
 
@@ -248,9 +238,10 @@ int __startup bootstrap(context_t * ctx)
 		goto exit;
 	
 	menu = menu_load(boot);
-	selected = menu_display(menu);
-	
-	for(i = 0, entry = menu; i < selected; entry = entry->next, i++);
+	entry = menu_display(menu);
+
+	if(entry == NULL)
+		goto exit;
 
 	switch(entry->device_type) {
 	case IDE_TYPE:
@@ -279,6 +270,7 @@ int __startup bootstrap(context_t * ctx)
 
 	boot->destroy(boot);
   exit:
+	printf("Press a key to open U-Boot prompt!\n");
 	video_get_key();
 	setenv("stdout", "vga");
 	return 0;
