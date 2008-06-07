@@ -32,11 +32,17 @@
 #define TFTP_TYPE    2
 #define CD_TYPE      3
 
+#define MAX_MODULES 100
+
 typedef struct menu {
 	char *title;
 	char *kernel;
 	char *append;
 	char *initrd;
+	char *modules[MAX_MODULES];
+	int modules_cnt;
+	char *argv[MAX_MODULES];
+	int argc;
 	int device_type;
 	int device_num;
 	int partition;
