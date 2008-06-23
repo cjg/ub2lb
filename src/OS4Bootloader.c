@@ -111,12 +111,35 @@ void testboot_linux(menu_t *entry, void *kernel, boot_dev_t *dev)
 	argv[2] = NULL;
 
 	if(entry->initrd != NULL) {
-		initrd = malloc(5 * 1024 * 1024);
+		initrd = malloc(18 * 1024 * 1024);
 		dev->load_file(dev, entry->initrd, initrd);
 		argc = 3;
 		argv[2] = malloc(32);
 		sprintf(argv[2], "%p", initrd);
 	}
+
+	bootm(NULL, 0, argc, argv);
+}
+
+void testboot_standalone(menu_t *entry, void *kernel, boot_dev_t *dev)
+{
+	image_header_t *header;
+	char *argv[2];
+	int argc;
+
+	header = kernel;
+	
+	if(header->ih_magic != IH_MAGIC 
+	   || header->ih_type != IH_TYPE_STANDALONE)
+		return;
+
+	setenv("autostart", "yes");
+	setenv("stdout", "vga");
+
+	argc = 2;
+	argv[0] = "bootm";
+	argv[1] = malloc(32);
+	sprintf(argv[1], "%p", kernel);
 
 	bootm(NULL, 0, argc, argv);
 }
@@ -263,6 +286,7 @@ int __startup bootstrap(context_t * ctx)
 	if(boot->load_file(boot, entry->kernel, kernel) < 0)
 		return 1;
 	
+	testboot_standalone(entry, kernel, boot);
 	testboot_linux(entry, kernel, boot);
 	testboot_aros(entry, kernel, boot);
 

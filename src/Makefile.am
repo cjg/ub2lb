@@ -1,8 +1,8 @@
 EXTRA_DIST=ldscript.lds
 
-bin_PROGRAMS=OS4Bootloader
+bin_PROGRAMS=Parthenope
 
-OS4Bootloader_SOURCES=\
+Parthenope_SOURCES=\
 	cdrom.c\
 	cdrom.h\
 	context.c\
@@ -20,7 +20,7 @@ OS4Bootloader_SOURCES=\
 	support.h\
 	tftp.c\
 	tftp.h\
-	OS4Bootloader.c
+	parthenope.c
 
-OS4Bootloader_LDFLAGS = -nostartfiles -nodefaultlibs -static -Wl,-s -Wl,-N -Wl,--entry=bootstrap -Wl,--script=ldscript.lds
+Parthenope_LDFLAGS = -nostartfiles -nodefaultlibs -static -Wl,-s -Wl,-N -Wl,--entry=bootstrap -Wl,--script=ldscript.lds
 CFLAGS = -O0 -fno-builtin
