@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.61)
 AC_INIT(parthenope, 0.1, gicoviello@gmail.com)
-AC_CONFIG_SRCDIR([src/OS4Bootloader.c])
+AC_CONFIG_SRCDIR([src/parthenope.c])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 
