@@ -245,25 +245,34 @@ static int do_ext2load (char *addr, char *filename, int dev, int part)
 	return filelen;
 }
 
-static int load_file(boot_dev_t * this, char *filename, void *buffer)
+typedef struct {
+	int (*load_file) (void *this, char *filename, void *buffer);
+	void (*destroy) (void *this);
+	int discno;
+	int partno;
+} ext2_boot_dev_t;
+
+static int load_file(ext2_boot_dev_t * this, char *filename, void *buffer)
 {
-	return do_ext2load (buffer, filename, 0, 6);
+	return do_ext2load (buffer, filename, this->discno, this->partno);
 }
 
-static int destroy(boot_dev_t * this)
+static int destroy(ext2_boot_dev_t * this)
 {
 	free(this);
 }
 
 boot_dev_t *ext2_create(int discno, int partno)
 {
-	boot_dev_t *boot;
+	ext2_boot_dev_t *boot;
 	block_dev_desc_t *dev_desc;
 	dev_desc = get_dev(discno);
 	if(dev_desc == NULL)
 		return NULL;
-	boot = malloc(sizeof(boot_dev_t));
+	boot = malloc(sizeof(ext2_boot_dev_t));
 	boot->load_file = (int (*)(void *, char *, void *))load_file;
 	boot->destroy = (void (*)(void *))destroy;
+	boot->discno = discno;
+	boot->partno = partno;
 	return boot;
 }
