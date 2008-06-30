@@ -318,6 +318,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 				}
 				char *dev = malloc(sep - lineptr);
 				strncpy(dev, lineptr, sep - lineptr - 1);
+				dev[sep-lineptr - 1] = 0;
 				entry->device_type = IDE_TYPE;
 				entry->device_num = strtol(dev);
 				entry->partition = strtol(sep);
