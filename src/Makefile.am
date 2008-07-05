@@ -16,6 +16,7 @@ Parthenope_SOURCES=\
 	image.h\
 	menu.c\
 	menu.h\
+	rdb.h\
 	support.c\
 	support.h\
 	tftp.c\
