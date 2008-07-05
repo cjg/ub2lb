@@ -46,7 +46,7 @@ static block_dev_desc_t *get_dev(int dev)
 	return bdev;
 }
 
-struct RigidDiskBlock *get_rdisk(block_dev_desc_t *dev_desc)
+struct RigidDiskBlock *get_rdb(block_dev_desc_t *dev_desc)
 {
 	int i;
 	char *s;
@@ -59,7 +59,8 @@ struct RigidDiskBlock *get_rdisk(block_dev_desc_t *dev_desc)
 			struct RigidDiskBlock *trdb = 
 				(struct RigidDiskBlock *)block_buffer;
 			if (trdb->rdb_ID == IDNAME_RIGIDDISK) {
-				/* TODO: here we should check the sum */
+				if(checksum((struct AmigaBlock *)trdb) != 0)
+					continue;
 				return trdb;
 			}
 		}
@@ -79,7 +80,7 @@ int get_partition_info (block_dev_desc_t *dev_desc, int part,
 	struct AmigaPartitionGeometry *g;
 	unsigned block, disk_type;
 
-	rdb = get_rdisk(dev_desc);
+	rdb = get_rdb(dev_desc);
 	block = rdb->rdb_PartitionList;
 	block_buffer = malloc(dev_desc->blksz);
 	while (block != 0xFFFFFFFF) {
@@ -87,7 +88,8 @@ int get_partition_info (block_dev_desc_t *dev_desc, int part,
 					 (unsigned *)block_buffer)) {
 			p = (struct PartitionBlock *)block_buffer;
 			if (p->pb_ID == IDNAME_PARTITION){
-				/* TODO: here we should check the sum */
+				if(checksum((struct AmigaBlock *) p) != 0)
+					continue;
 				if(part-- == 0)
 					break;
 				block = p->pb_Next;
@@ -114,32 +116,21 @@ int get_partition_info (block_dev_desc_t *dev_desc, int part,
 	return 0;
 }
 
-static int do_ext2load (char *addr, char *filename, int dev, int part)
+typedef struct {
+	int (*load_file) (void *this, char *filename, void *buffer);
+	void (*destroy) (void *this);
+	int discno;
+	int partno;
+	unsigned part_length;
+} ext2_boot_dev_t;
+
+static int load_file(ext2_boot_dev_t * this, char *filename, void *buffer)
 {
-	unsigned part_length, filelen;
-	disk_partition_t info;
-	block_dev_desc_t *dev_desc = NULL;
-
-	dev_desc = get_dev(dev);
-	if (dev_desc==NULL) {
-		printf ("\n** Block device %d not supported\n", dev);
-		return -1;
-	}
-
-	if (get_partition_info (dev_desc, part, &info)) {
-		printf ("** Bad partition %d **\n", part);
-		return -2;
-	}
-
-	if ((part_length = ext2fs_set_blk_dev_full(dev_desc, &info)) == 0) {
-		printf ("** Bad partition - %d:%d **\n",  dev, part);
-		ext2fs_close();
-		return -3;
-	}
-
-	if (!ext2fs_mount(part_length)) {
+	unsigned filelen;
+	
+	if (!ext2fs_mount(this->part_length)) {
 		printf ("** Bad ext2 partition or disk - %d:%d **\n",  
-			dev, part);
+			this->discno, this->partno);
 		ext2fs_close();
 		return -4;
 	}
@@ -151,9 +142,9 @@ static int do_ext2load (char *addr, char *filename, int dev, int part)
 		return -5;
 	}
 
-	if (ext2fs_read((char *)addr, filelen) != filelen) {
+	if (ext2fs_read((char *) buffer, filelen) != filelen) {
 		printf("\n** Unable to read \"%s\" from %d:%d **\n", 
-		       filename, dev, part);
+		       filename, this->discno, this->partno);
 		ext2fs_close();
 		return -6;
 	}
@@ -161,18 +152,6 @@ static int do_ext2load (char *addr, char *filename, int dev, int part)
 	ext2fs_close();
 
 	return filelen;
-}
-
-typedef struct {
-	int (*load_file) (void *this, char *filename, void *buffer);
-	void (*destroy) (void *this);
-	int discno;
-	int partno;
-} ext2_boot_dev_t;
-
-static int load_file(ext2_boot_dev_t * this, char *filename, void *buffer)
-{
-	return do_ext2load (buffer, filename, this->discno, this->partno);
 }
 
 static int destroy(ext2_boot_dev_t * this)
@@ -183,14 +162,70 @@ static int destroy(ext2_boot_dev_t * this)
 boot_dev_t *ext2_create(int discno, int partno)
 {
 	ext2_boot_dev_t *boot;
-	block_dev_desc_t *dev_desc;
+	disk_partition_t info;
+	block_dev_desc_t *dev_desc = NULL;
+	unsigned part_length;
+
 	dev_desc = get_dev(discno);
-	if(dev_desc == NULL)
+	if (dev_desc==NULL) {
+		printf ("\n** Block device %d not supported\n", discno);
 		return NULL;
+	}
+
+	if (get_partition_info (dev_desc, partno, &info)) {
+		printf ("** Bad partition %d **\n", partno);
+		return NULL;
+	}
+
+	if ((part_length = ext2fs_set_blk_dev_full(dev_desc, &info)) == 0) {
+		printf ("** Bad partition - %d:%d **\n", discno, partno);
+		ext2fs_close();
+		return NULL;
+	}
+
+	if (!ext2fs_mount(part_length)) {
+		printf ("** Bad ext2 partition or disk - %d:%d **\n",  
+			discno, partno);
+		ext2fs_close();
+		return NULL;
+	}
+	
+	ext2fs_close();
+
 	boot = malloc(sizeof(ext2_boot_dev_t));
 	boot->load_file = (int (*)(void *, char *, void *))load_file;
 	boot->destroy = (void (*)(void *))destroy;
 	boot->discno = discno;
 	boot->partno = partno;
+	boot->part_length = part_length;
+
 	return (boot_dev_t *) boot;
+}
+
+static int has_file(ext2_boot_dev_t *this, char *filename)
+{
+	unsigned filelen;
+	
+	ext2fs_mount(this->part_length);
+	filelen = ext2fs_open(filename);
+	ext2fs_close();
+
+	return (int) filelen > 0;
+}
+
+boot_dev_t *ext2_guess_booting(int discno)
+{
+	int i;
+	boot_dev_t *boot;
+	for(i = 0; i < 16; i++) {
+		boot = ext2_create(discno, i);
+		if(boot == NULL)
+			continue;
+		if(has_file((ext2_boot_dev_t *) boot, "menu.lst")
+		   || has_file((ext2_boot_dev_t *) boot, "boot/menu.lst"))
+			return boot;
+		boot->destroy(boot);
+	}
+
+	return NULL;
 }

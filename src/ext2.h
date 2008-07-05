@@ -26,5 +26,6 @@
 #include "device.h"
 
 boot_dev_t *ext2_create(int discno, int partno);
+boot_dev_t *ext2_guess_booting(int discno);
 
 #endif /* _EXT2_H */

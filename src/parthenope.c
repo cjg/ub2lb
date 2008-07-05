@@ -69,7 +69,7 @@ static boot_dev_t *get_booting_device(void)
 
 	switch(hnd->ush_device.type) {
 	case DEV_TYPE_HARDDISK:
-		return ext2_create(0, 0);
+		return ext2_guess_booting(0);
 		break;
 	case DEV_TYPE_NETBOOT:
 		return tftp_create();
@@ -251,7 +251,7 @@ int __startup bootstrap(context_t * ctx)
 	
 	context_init(ctx);
 
-/* 	setenv("stdout", "serial"); */
+	setenv("stdout", "serial");
 	
 	video_clear();
 	video_draw_text(5, 4, 0, " Parthenope (ub2lb) version 0.01", 80);
@@ -301,8 +301,8 @@ int __startup bootstrap(context_t * ctx)
 
 	boot->destroy(boot);
   exit:
+	setenv("stdout", "vga");
 	printf("Press a key to open U-Boot prompt!\n");
 	video_get_key();
-	setenv("stdout", "vga");
 	return 0;
 }

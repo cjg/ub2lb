@@ -157,7 +157,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 	char *line;
 	char *word;
 	char *lineptr;
-	int status;
+	int status, n;
 	menu_t *menu, *entry, *ptr;
 	
 	menu = entry_alloc();
@@ -166,6 +166,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 	line = NULL;
 	offset = 0;
 	status = S;
+	n = 0;
 	int parse = 1, kernel;
 	while(parse) {
 		switch(status) {
@@ -321,7 +322,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 				dev[sep-lineptr - 1] = 0;
 				entry->device_type = IDE_TYPE;
 				entry->device_num = strtol(dev);
-				entry->partition = strtol(sep);
+				entry->partition = strtol(sep) - 1;
 				free(word);
 				free(line);
 				free(dev);
@@ -360,6 +361,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 		case A:
 			for(ptr = menu; ptr->next != NULL; ptr=ptr->next);
 			ptr->next = entry;
+			n++;
 			status = S;
 			break;
 		case R:
@@ -378,6 +380,8 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			break;
 		}
 	}
+	if(n == 0)
+		return NULL;
 	return menu;
 }
 
@@ -398,6 +402,7 @@ menu_t *menu_load(boot_dev_t * boot)
 	buffer_length = boot->load_file(boot, MENU_FILE, buffer);
 
 	if (buffer_length <= 0) {
+		printf("NON TROVATO\n");
 		free(buffer);
 		return NULL;
 	}

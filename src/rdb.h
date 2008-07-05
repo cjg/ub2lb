@@ -40,11 +40,6 @@
 		      && (*(uint32_t *) (blk)) != IDNAME_LOADSEG	\
 		      && (*(uint32_t *) (blk)) != IDNAME_BOOT)
 
-/* #ifndef uint32_t */
-/* typedef unsigned uint32_t; */
-/* typedef int int32_t; */
-/* #endif */
-
 struct AmigaBlock {
 	uint32_t amiga_ID;	/* Identifier 32 bit word */
 	uint32_t amiga_SummedLongss;	/* Size of the structure for checksums */
