@@ -21,90 +21,8 @@
  */
 
 #include "context.h"
+#include "rdb.h"
 #include "ext2.h"
-
-#define RDB_ALLOCATION_LIMIT	16
-#define	IDNAME_RIGIDDISK	0x5244534B	/* "RDSK" */
-#define	IDNAME_PARTITION	0x50415254	/* "PART" */
-
-struct RigidDiskBlock {
-	unsigned rdb_ID;
-	int rdb_SummedLongs;
-	int rdb_ChkSum;
-	unsigned rdb_HostID;
-	int rdb_BlockBytes;
-	unsigned rdb_Flags;
-	unsigned	rdb_BadBlockList;
-	int	rdb_PartitionList;
-	unsigned	rdb_FileSysHeaderList;
-	unsigned	rdb_DriveInit;
-	unsigned	rdb_Reserved1[6];
-	unsigned	rdb_Cylinders;
-	unsigned	rdb_Sectors;
-	unsigned	rdb_Heads;
-	unsigned	rdb_Interleave;
-	unsigned	rdb_Park;
-	unsigned	rdb_Reserved2[3];
-	unsigned	rdb_WritePreComp;
-	unsigned	rdb_ReducedWrite;
-	unsigned	rdb_StepRate;
-	unsigned	rdb_Reserved3[5];
-	unsigned	rdb_RDBBlocksLo;
-	unsigned	rdb_RDBBlocksHi;
-	unsigned	rdb_LoCylinder;
-	unsigned	rdb_HiCylinder;
-	unsigned	rdb_CylBlocks;
-	unsigned	rdb_AutoParkSeconds;
-	unsigned	rdb_HighRDSKBlock;
-	unsigned	rdb_Reserved4;
-	char	rdb_DiskVendor[8];
-	char	rdb_DiskProduct[16];
-	char	rdb_DiskRevision[4];
-	char	rdb_ControllerVendor[8];
-	char	rdb_ControllerProduct[16];
-	char	rdb_ControllerRevision[4];
-	unsigned	rdb_Reserved5[10];
-};
-
-struct PartitionBlock {
-	int pb_ID;
-	int pb_SummedLongs;
-	int pb_ChkSum;
-	unsigned pb_HostID;
-	int pb_Next;
-	unsigned pb_Flags;
-	unsigned pb_Reserved1[2];
-	unsigned pb_DevFlags;
-	char pb_DriveName[32];
-	unsigned pb_Reserved2[15];
-	int pb_Environment[17];
-	unsigned pb_EReserved[15];
-};
-
-struct amiga_part_geometry
-{
-    unsigned table_size;
-    unsigned size_blocks;
-    unsigned unused1;
-    unsigned surfaces;
-    unsigned sector_per_block;
-    unsigned block_per_track;
-    unsigned reserved;
-    unsigned prealloc;
-    unsigned interleave;
-    unsigned low_cyl;
-    unsigned high_cyl;
-    unsigned num_buffers;
-    unsigned buf_mem_type;
-    unsigned max_transfer;
-    unsigned mask;
-    int boot_priority;
-    unsigned dos_type;
-    unsigned baud;
-    unsigned control;
-    unsigned boot_blocks;
-};
-
 
 static block_dev_desc_t *get_dev(int dev)
 {
@@ -134,7 +52,7 @@ struct RigidDiskBlock *get_rdisk(block_dev_desc_t *dev_desc)
 	char *s;
 	char *block_buffer = malloc(dev_desc->blksz);
 
-	for (i = 0; i < RDB_ALLOCATION_LIMIT; i++) {
+	for (i = 0; i < RDB_LOCATION_LIMIT; i++) {
 		unsigned res = dev_desc->block_read(dev_desc->dev, i, 1,
 						    (unsigned *)block_buffer);
 		if (res == 1) {
@@ -158,7 +76,7 @@ int get_partition_info (block_dev_desc_t *dev_desc, int part,
 	char *block_buffer; 
 	struct RigidDiskBlock *rdb;
 	struct PartitionBlock *p;
-	struct amiga_part_geometry *g;
+	struct AmigaPartitionGeometry *g;
 	unsigned block, disk_type;
 
 	rdb = get_rdisk(dev_desc);
@@ -177,14 +95,14 @@ int get_partition_info (block_dev_desc_t *dev_desc, int part,
 		} else block = 0xFFFFFFFF;
 	}
 
-	g = (struct amiga_part_geometry *)&(p->pb_Environment);
-	info->start = g->low_cyl  * g->block_per_track * g->surfaces;
-	info->size  = (g->high_cyl - g->low_cyl + 1) * g->block_per_track * 
-		g->surfaces - 1;
+	g = (struct AmigaPartitionGeometry *)&(p->pb_Environment);
+	info->start = g->apg_LowCyl  * g->apg_BlockPerTrack * g->apg_Surfaces;
+	info->size  = (g->apg_HighCyl - g->apg_LowCyl + 1) 
+		* g->apg_BlockPerTrack * g->apg_Surfaces - 1;
 	info->blksz = rdb->rdb_BlockBytes;
 	strcpy(info->name, p->pb_DriveName);
 	
-	disk_type = g->dos_type;
+	disk_type = g->apg_DosType;
 
 	info->type[0] = (disk_type & 0xFF000000)>>24;
 	info->type[1] = (disk_type & 0x00FF0000)>>16;
@@ -274,5 +192,5 @@ boot_dev_t *ext2_create(int discno, int partno)
 	boot->destroy = (void (*)(void *))destroy;
 	boot->discno = discno;
 	boot->partno = partno;
-	return boot;
+	return (boot_dev_t *) boot;
 }
