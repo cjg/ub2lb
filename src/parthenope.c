@@ -251,7 +251,7 @@ int __startup bootstrap(context_t * ctx)
 	
 	context_init(ctx);
 
-	setenv("stdout", "serial");
+/* 	setenv("stdout", "serial"); */
 	
 	video_clear();
 	video_draw_text(5, 4, 0, " Parthenope (ub2lb) version 0.01", 80);
@@ -262,6 +262,12 @@ int __startup bootstrap(context_t * ctx)
 		goto exit;
 
 	menu = menu_load(boot);
+	if (menu == NULL) {
+		setenv("stdout", "vga");
+		printf("No menu.lst found!\n");
+		goto exit;
+	}
+
 	entry = menu_display(menu);
 
 	if(entry == NULL)

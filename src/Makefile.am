@@ -23,4 +23,4 @@ Parthenope_SOURCES=\
 	parthenope.c
 
 Parthenope_LDFLAGS = -nostartfiles -nodefaultlibs -static -Wl,-s -Wl,-N -Wl,--entry=bootstrap -Wl,--script=ldscript.lds
-CFLAGS = -O0 -fno-builtin
+CFLAGS = -O0 -fno-builtin -fno-stack-protector
