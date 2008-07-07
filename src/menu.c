@@ -402,7 +402,6 @@ menu_t *menu_load(boot_dev_t * boot)
 	buffer_length = boot->load_file(boot, MENU_FILE, buffer);
 
 	if (buffer_length <= 0) {
-		printf("NON TROVATO\n");
 		free(buffer);
 		return NULL;
 	}
