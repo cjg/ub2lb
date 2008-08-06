@@ -542,7 +542,7 @@ menu_t *menu_load(boot_dev_t * boot)
 	int buffer_length;
 	int n;
 
-	buffer = malloc(0x1000);
+	buffer = malloc(16 * 0x1000);
 
 	if (buffer == NULL)
 		return NULL;
