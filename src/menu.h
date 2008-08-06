@@ -53,7 +53,7 @@ typedef struct menu {
 } menu_t;
 
 menu_t *menu_load(boot_dev_t * boot);
-menu_t * menu_display(menu_t * self);
+menu_t *menu_display(menu_t * self);
 void menu_free(menu_t * self);
 
 #endif /* _MENU_H */

@@ -17,6 +17,8 @@ Parthenope_SOURCES=\
 	menu.c\
 	menu.h\
 	rdb.h\
+	sfs.c\
+	sfs.h\
 	support.c\
 	support.h\
 	tftp.c\
@@ -24,5 +26,5 @@ Parthenope_SOURCES=\
 	parthenope.c
 
 Parthenope_LDFLAGS = -nostartfiles -nodefaultlibs -static -Wl,-s -Wl,-N -Wl,--entry=bootstrap -Wl,--script=ldscript.lds
-CFLAGS = -fno-builtin -nostdinc -nostdlib -Os -ffixed-r2 -ffixed-r14 -ffixed-r29
+CFLAGS = -Wall -fno-builtin -nostdinc -nostdlib -Os -ffixed-r2 -ffixed-r14 -ffixed-r29
 

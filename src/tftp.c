@@ -30,6 +30,7 @@ static int load_file(boot_dev_t * this, char *filename, void *buffer)
 static int destroy(boot_dev_t * this)
 {
 	free(this);
+	return 0;
 }
 
 boot_dev_t *tftp_create(void)

@@ -24,18 +24,18 @@
 
 static context_t *context = NULL;
 
-void context_init(context_t *ctx) 
+void context_init(context_t * ctx)
 {
 	context = ctx;
 }
 
-inline context_t *context_get(void) 
+inline context_t *context_get(void)
 {
 	return context;
 }
 
 /* terminal IO functions */
-inline int getc(void) 
+inline int getc(void)
 {
 	return context->c_getc();
 }
@@ -72,7 +72,7 @@ inline SCAN_HANDLE start_unit_scan(const void *scan_list,
 	return context->c_start_unit_scan(scan_list, blocksize);
 }
 
-inline SCAN_HANDLE next_unit_scan(SCAN_HANDLE h,unsigned int *const blocksize)
+inline SCAN_HANDLE next_unit_scan(SCAN_HANDLE h, unsigned int *const blocksize)
 {
 	return context->c_next_unit_scan(h, blocksize);
 }
@@ -138,7 +138,7 @@ inline int tstc(void)
 
 inline void udelay(unsigned long t)
 {
-	return  context->c_udelay(t);
+	return context->c_udelay(t);
 }
 
 /* video functions */
@@ -147,7 +147,7 @@ inline void video_clear(void)
 	return context->c_video_clear();
 }
 
-inline void video_draw_box(int style, int attr, char *title, int separate, 
+inline void video_draw_box(int style, int attr, char *title, int separate,
 			   int x, int y, int w, int h)
 {
 	return context->c_video_draw_box(style, attr, title, separate, x, y,
@@ -170,7 +170,7 @@ inline unsigned short video_set_partial_scroll_limits(const short start,
 	return context->c_set_partial_scroll_limits(start, end);
 }
 
-inline void video_get_partial_scroll_limits(short *const start, 
+inline void video_get_partial_scroll_limits(short *const start,
 					    short *const end)
 {
 	return context->c_get_partial_scroll_limits(start, end);
@@ -179,6 +179,11 @@ inline void video_get_partial_scroll_limits(short *const start,
 inline int video_get_key(void)
 {
 	return context->c_video_get_key();
+}
+
+inline int video_display_bitmap(unsigned long addr, int x, int y)
+{
+	return context->c_video_display_bitmap(addr, x, y);
 }
 
 /* ext2fs functions */

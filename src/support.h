@@ -6,8 +6,11 @@ typedef struct node {
 } node_t;
 
 typedef struct list {
-	struct list *l_head, *l_tail, *l_tailpred;
+	struct node *l_head, *l_tail, *l_tailpred;
 } list_t;
+
+list_t *list_new(void);
+void list_append(list_t * self, node_t * node);
 
 typedef struct tagitem {
 	unsigned long ti_tag, ti_data;

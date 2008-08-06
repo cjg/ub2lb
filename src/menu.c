@@ -67,18 +67,18 @@ static void entry_free(menu_t * entry)
 	free(entry);
 }
 
-enum states {S, DEF, DLY, TIT, IN, RT, K, RD, M, A, R, AQ, RQ};
+enum states { S, DEF, DLY, TIT, IN, RT, K, RD, M, A, R, AQ, RQ };
 
 char *getline(char *src, int src_len, int *src_offset)
 {
 	char *nlptr, *line;
 	int len;
-	
+
 	if (*src_offset >= src_len)
 		return NULL;
 
 	nlptr = strchr(src + *src_offset, '\n');
-	if(nlptr != NULL)
+	if (nlptr != NULL)
 		len = nlptr - (src + *src_offset) + 1;
 	else
 		len = src_len - *src_offset;
@@ -96,8 +96,8 @@ char *eatcomments(char *line)
 	char *cptr;
 
 	cptr = strchr(line, '#');
-	
-	if(cptr != NULL)
+
+	if (cptr != NULL)
 		line[cptr - line] = 0;
 
 	return line;
@@ -109,11 +109,11 @@ char *getnextword(char *line)
 	int len;
 
 	bptr = strchr(line, ' ');
-	
-	if(bptr == NULL)
+
+	if (bptr == NULL)
 		bptr = strchr(line, '\t');
-		
-	if(bptr != NULL)
+
+	if (bptr != NULL)
 		len = bptr - line;
 	else
 		len = strlen(line);
@@ -145,46 +145,198 @@ char *strtrim(char *s)
 	return s;
 }
 
-char *argsplit(char *line, char **argv, int *argc)
+char *kick_eatcomments(char *line)
 {
-	
+	char *cptr;
+
+	cptr = strchr(line, ';');
+
+	if (cptr != NULL)
+		line[cptr - line] = 0;
+
+	return line;
 }
 
-
-static menu_t *fsm(char *buffer, int buffer_len)
+static int kick_fsm(char *buffer, int buffer_len, menu_t * menu)
 {
 	int offset;
 	char *line;
 	char *word;
 	char *lineptr;
 	int status, n;
-	menu_t *menu, *entry, *ptr;
-	
-	menu = entry_alloc();
-	menu->default_os = 0;
-	menu->delay = 5;
+	menu_t /**menu,*/  * entry, *ptr;
+	/*
+	   menu = entry_alloc();
+	   menu->default_os = 0;
+	   menu->delay = 5;
+	 */
 	line = NULL;
 	offset = 0;
 	status = S;
 	n = 0;
 	int parse = 1, kernel;
-	while(parse) {
-		switch(status) {
+	while (parse) {
+		switch (status) {
 		case S:
-			if((line = getline(buffer, buffer_len, 
-					   &offset)) == NULL) {
+			if ((line = getline(buffer, buffer_len,
+					    &offset)) == NULL) {
 				parse = 0;
 				break;
 			}
-			eatcomments(line);
+			kick_eatcomments(line);
 			strtrim(line);
-			if(strlen(line) == 0) {
+			if (strlen(line) == 0) {
 				free(line);
 				status = S;
 				break;
 			}
 			word = getnextword(line);
-			if(strcmp(word, "title") == 0) {
+			if (strcmp(word, "LABEL") == 0) {
+				status = TIT;
+				lineptr = line + strlen(word);
+			} else
+				status = S;
+			free(word);
+			break;
+		case TIT:
+			strtrim(lineptr);
+			if (strlen(lineptr) > 0) {
+				status = IN;
+				kernel = 0;
+				entry = entry_alloc();
+				entry->title = strdup(lineptr);
+			} else
+				status = S;
+			free(line);
+			break;
+		case IN:
+			if ((line = getline(buffer, buffer_len,
+					    &offset)) == NULL) {
+				if (kernel)
+					status = AQ;
+				else
+					status = RQ;
+				break;
+			}
+			kick_eatcomments(line);
+			strtrim(line);
+			if (strlen(line) == 0) {
+				free(line);
+				status = IN;
+				break;
+			}
+			word = getnextword(line);
+			lineptr = line + strlen(word);
+			if (strcmp(word, "EXEC") == 0) {
+				status = K;
+			} else if (strcmp(word, "MODULE") == 0) {
+				status = M;
+			} else if (strcmp(word, "LABEL") == 0) {
+				offset -= strlen(line) + 1;
+				free(line);
+				if (kernel) {
+					status = A;
+				} else {
+					status = R;
+				}
+			} else {
+				free(line);
+				status = R;
+			}
+			free(word);
+			break;
+		case K:
+			strtrim(lineptr);
+			word = getnextword(lineptr);
+			if (!strlen(word))
+				status = R;
+			else {
+				status = IN;
+				kernel = 1;
+				entry->kernel = strdup(word);
+				lineptr = lineptr + strlen(word);
+				strtrim(lineptr);
+				if (strlen(lineptr) > 0) {
+					entry->append = strdup(lineptr);
+				}
+			}
+			free(line);
+			free(word);
+			break;
+		case M:
+			strtrim(lineptr);
+			word = getnextword(lineptr);
+			if (!strlen(word))
+				status = R;
+			else {
+				status = IN;
+				entry->modules[entry->modules_cnt++] =
+				    strdup(word);
+			}
+			free(line);
+			free(word);
+			break;
+		case A:
+			for (ptr = menu; ptr->next != NULL; ptr = ptr->next) ;
+			ptr->next = entry;
+			n++;
+			status = S;
+			break;
+		case R:
+			entry_free(entry);
+			status = S;
+			break;
+		case AQ:
+			for (ptr = menu; ptr->next != NULL; ptr = ptr->next) ;
+			ptr->next = entry;
+			return 1;
+			break;
+		case RQ:
+		default:
+			entry_free(entry);
+			return 0;
+			break;
+		}
+	}
+	return n;
+}
+
+static int fsm(char *buffer, int buffer_len, menu_t * menu)
+{
+	int offset;
+	char *line;
+	char *word;
+	char *lineptr;
+	int status, n;
+	menu_t /**menu,*/  * entry, *ptr;
+
+	/*
+	   menu = entry_alloc();
+	   menu->default_os = 0;
+	   menu->delay = 5;
+	 */
+	line = NULL;
+	offset = 0;
+	status = S;
+	n = 0;
+	int parse = 1, kernel;
+	while (parse) {
+		switch (status) {
+		case S:
+			if ((line = getline(buffer, buffer_len,
+					    &offset)) == NULL) {
+				parse = 0;
+				break;
+			}
+			eatcomments(line);
+			strtrim(line);
+			if (strlen(line) == 0) {
+				free(line);
+				status = S;
+				break;
+			}
+			word = getnextword(line);
+			if (strcmp(word, "title") == 0) {
 				status = TIT;
 				lineptr = line + strlen(word);
 			} else if (strcmp(word, "default") == 0) {
@@ -199,29 +351,29 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			break;
 		case DEF:
 			status = S;
-			if(strlen(lineptr) == 0) 
+			if (strlen(lineptr) == 0)
 				break;
 			strtrim(lineptr);
 			word = getnextword(lineptr);
-			if(strlen(word) == 0) 
+			if (strlen(word) == 0)
 				break;
 			menu->default_os = strtol(word);
 			free(word);
 			break;
 		case DLY:
 			status = S;
-			if(strlen(lineptr) == 0) 
+			if (strlen(lineptr) == 0)
 				break;
 			strtrim(lineptr);
 			word = getnextword(lineptr);
-			if(strlen(word) == 0) 
+			if (strlen(word) == 0)
 				break;
 			menu->delay = strtol(word);
 			free(word);
 			break;
 		case TIT:
 			strtrim(lineptr);
-			if(strlen(lineptr) > 0) {
+			if (strlen(lineptr) > 0) {
 				status = IN;
 				kernel = 0;
 				entry = entry_alloc();
@@ -231,9 +383,9 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			free(line);
 			break;
 		case IN:
-			if((line = getline(buffer, buffer_len, 
-					   &offset)) == NULL) {
-				if(kernel)
+			if ((line = getline(buffer, buffer_len,
+					    &offset)) == NULL) {
+				if (kernel)
 					status = AQ;
 				else
 					status = RQ;
@@ -241,25 +393,25 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			}
 			eatcomments(line);
 			strtrim(line);
-			if(strlen(line) == 0) {
+			if (strlen(line) == 0) {
 				free(line);
 				status = IN;
 				break;
 			}
 			word = getnextword(line);
 			lineptr = line + strlen(word);
-			if(strcmp(word, "kernel") == 0) {
+			if (strcmp(word, "kernel") == 0) {
 				status = K;
-			} else if(strcmp(word, "root") == 0) {
+			} else if (strcmp(word, "root") == 0) {
 				status = RT;
-			} else if(strcmp(word, "initrd") == 0) {
+			} else if (strcmp(word, "initrd") == 0) {
 				status = RD;
-			} else if(strcmp(word, "module") == 0) {
+			} else if (strcmp(word, "module") == 0) {
 				status = M;
-			} else if(strcmp(word, "title") == 0) {
+			} else if (strcmp(word, "title") == 0) {
 				offset -= strlen(line) + 1;
 				free(line);
-				if(kernel) {
+				if (kernel) {
 					status = A;
 				} else {
 					status = R;
@@ -273,7 +425,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 		case K:
 			strtrim(lineptr);
 			word = getnextword(lineptr);
-			if(!strlen(word))
+			if (!strlen(word))
 				status = R;
 			else {
 				status = IN;
@@ -281,7 +433,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 				entry->kernel = strdup(word);
 				lineptr = lineptr + strlen(word);
 				strtrim(lineptr);
-				if(strlen(lineptr) > 0) {
+				if (strlen(lineptr) > 0) {
 					entry->append = strdup(lineptr);
 				}
 			}
@@ -291,7 +443,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 		case RT:
 			strtrim(lineptr);
 			word = getnextword(lineptr);
-			if(!strlen(word)) {
+			if (!strlen(word)) {
 				status = R;
 				free(word);
 				free(line);
@@ -299,19 +451,19 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			}
 			lineptr = lineptr + strlen(word);
 			strtrim(lineptr);
-			if(strcmp(word, "tftp") == 0) {
+			if (strcmp(word, "tftp") == 0) {
 				entry->device_type = TFTP_TYPE;
 				free(word);
 				free(line);
 				status = IN;
-			} else if(strcmp(word, "cdrom") == 0) {
+			} else if (strcmp(word, "cdrom") == 0) {
 				entry->device_type = CD_TYPE;
 				free(word);
 				free(line);
 				status = IN;
-			} else if(strcmp(word, "ide") == 0) {
+			} else if (strcmp(word, "ide") == 0) {
 				char *sep = strchr(lineptr, ':');
-				if(sep == NULL || *++sep == 0) {
+				if (sep == NULL || *++sep == 0) {
 					status = R;
 					free(line);
 					free(word);
@@ -319,7 +471,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 				}
 				char *dev = malloc(sep - lineptr);
 				strncpy(dev, lineptr, sep - lineptr - 1);
-				dev[sep-lineptr - 1] = 0;
+				dev[sep - lineptr - 1] = 0;
 				entry->device_type = IDE_TYPE;
 				entry->device_num = strtol(dev);
 				entry->partition = strtol(sep) - 1;
@@ -336,7 +488,7 @@ static menu_t *fsm(char *buffer, int buffer_len)
 		case RD:
 			strtrim(lineptr);
 			word = getnextword(lineptr);
-			if(!strlen(word))
+			if (!strlen(word))
 				status = R;
 			else {
 				status = IN;
@@ -348,18 +500,18 @@ static menu_t *fsm(char *buffer, int buffer_len)
 		case M:
 			strtrim(lineptr);
 			word = getnextword(lineptr);
-			if(!strlen(word))
+			if (!strlen(word))
 				status = R;
 			else {
 				status = IN;
-				entry->modules[entry->modules_cnt++] = 
-					strdup(word);
+				entry->modules[entry->modules_cnt++] =
+				    strdup(word);
 			}
 			free(line);
 			free(word);
 			break;
 		case A:
-			for(ptr = menu; ptr->next != NULL; ptr=ptr->next);
+			for (ptr = menu; ptr->next != NULL; ptr = ptr->next) ;
 			ptr->next = entry;
 			n++;
 			status = S;
@@ -369,74 +521,72 @@ static menu_t *fsm(char *buffer, int buffer_len)
 			status = S;
 			break;
 		case AQ:
-			for(ptr = menu; ptr->next != NULL; ptr=ptr->next);
+			for (ptr = menu; ptr->next != NULL; ptr = ptr->next) ;
 			ptr->next = entry;
-			return menu;
+			return 1;
 			break;
 		case RQ:
 		default:
 			entry_free(entry);
-			return NULL;
+			return 0;
 			break;
 		}
 	}
-	if(n == 0)
-		return NULL;
-	return menu;
+	return 1;
 }
 
 menu_t *menu_load(boot_dev_t * boot)
 {
 	menu_t *self;
 	char *buffer;
-	char *word;
 	int buffer_length;
-	int buffer_offset = 0;
-	int current_state;
+	int n;
 
 	buffer = malloc(0x1000);
 
 	if (buffer == NULL)
 		return NULL;
 
-	buffer_length = boot->load_file(boot, MENU_FILE, buffer);
-
-	if (buffer_length <= 0) {
-		free(buffer);
-		return NULL;
-	}
-
-	self = fsm(buffer, buffer_length);
+	self = entry_alloc();
+	self->default_os = 0;
+	self->delay = 5;
+	n = 0;
+	if ((buffer_length = boot->load_file(boot, MENU_FILE, buffer)) >= 0)
+		n = fsm(buffer, buffer_length, self);
+	if ((buffer_length = boot->load_file(boot, "Kickstart/Kicklayout",
+					     buffer)) >= 0)
+		n += kick_fsm(buffer, buffer_length, self);
 
 	free(buffer);
-	
+	if (n == 0)
+		return NULL;
 	return self;
 }
 
 menu_t *display(menu_t * self, int selected)
 {
 	int i;
-	menu_t *entry, *sentry;
+	menu_t *entry, *sentry = NULL;
 	char buff[100];
 	static int first = 0, last = 10;
 
-	video_draw_box(1, 0, "Select boot option.", 1, 5, 5, 70, 15); 
+	video_draw_box(1, 0, "Select boot option.", 1, 5, 5, 70, 15);
 
-	if(selected < first)
+	if (selected < first)
 		first--;
 
-	if(selected > last)
+	if (selected > last)
 		first++;
 
-	for(i = 0; i < first; i++)
+	for (i = 0; i < first; i++)
 		self = self->next;
 
-	for (i = 0, entry = self->next; entry != NULL && i < 11; 
+	for (i = 0, entry = self->next; entry != NULL && i < 11;
 	     entry = entry->next, i++) {
 		sprintf(buff, " %s", entry->title);
 		video_draw_text(6, 8 + i, (i + first == selected ? 2 : 0), buff,
 				68);
-		if(i + first == selected)
+		if (i + first == selected)
 			sentry = entry;
 	}
 
@@ -449,38 +599,42 @@ menu_t *menu_display(menu_t * self)
 {
 	int key, max, selected, delay, old_delay;
 	menu_t *entry;
-	for(max = -2, entry = self; entry != NULL; entry = entry->next, max++);
+	for (max = -2, entry = self; entry != NULL;
+	     entry = entry->next, max++) ;
 
 	selected = self->default_os <= max ? self->default_os : max;
 	delay = self->delay * 100;
-	
+	if (delay <= 0)
+		goto skip_delay;
 	entry = display(self, selected);
+	old_delay = 0;
 	while (delay) {
-		if(old_delay != delay / 100) {
+		if (old_delay != delay / 100) {
 			char tmp[30];
 			sprintf(tmp, "(%d seconds left)", delay / 100);
 			video_draw_text(54, 6, 0, tmp, 20);
 			old_delay = delay / 100;
 		}
-		if(tstc())
+		if (tstc())
 			break;
 		udelay(10000);
 		delay--;
 	}
 
-	if(delay == 0)
+	if (delay == 0)
 		return entry;
- 
-	while(1) {
+
+skip_delay:
+	while (1) {
 		entry = display(self, selected);
 		key = video_get_key();
 		if (key == 4 && selected > 0)
 			selected--;
 		if (key == 3 && selected < max)
 			selected++;
-		if (key == 117) 
+		if (key == 117)
 			break;
-		if (key == 1 || key == 6) 
+		if (key == 1 || key == 6)
 			return entry;
 	}
 
