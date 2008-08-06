@@ -31,7 +31,7 @@
 #include "cdrom.h"
 
 char __attribute__ ((__used__)) * version =
-    "\0$VER: Parthenope 0.72 (6.8.2008)"
+    "\0$VER: Parthenope 0." VERSION " (6.8.2008) "
     "Copyright (C) 2008 Giuseppe Coviello. "
     "This is free software.  You may redistribute copies of it under the "
     "terms of the GNU General Public License "
@@ -77,14 +77,11 @@ static void set_progress(int progress)
 static boot_dev_t *get_booting_device(void)
 {
 	SCAN_HANDLE hnd;
-	boot_dev_t *boot;
 	hnd = get_curr_device();
 
 	switch (hnd->ush_device.type) {
 	case DEV_TYPE_HARDDISK:
-		boot = ext2_guess_booting(0);
-		if (!boot)
-			return sfs_guess_booting(0);
+		return NULL;
 		break;
 	case DEV_TYPE_NETBOOT:
 		return tftp_create();
@@ -316,12 +313,9 @@ int __startup bootstrap(context_t * ctx)
 	setenv("stdout", "serial");
 
 	video_clear();
-	video_draw_text(5, 4, 0, " Parthenope (ub2lb) version 0.01", 80);
+	video_draw_text(5, 4, 0, " Parthenope (ub2lb) version 0." VERSION, 80);
 
 	boot = get_booting_device();
-
-	if (boot == NULL)
-		goto exit;
 
 	menu = menu_load(boot);
 	if (menu == NULL) {

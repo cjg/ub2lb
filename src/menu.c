@@ -24,6 +24,8 @@
 #include "debug.h"
 #include "menu.h"
 #include "iniparser.h"
+#include "ext2.h"
+#include "sfs.h"
 
 /*
 typedef struct menu {
@@ -162,9 +164,9 @@ static int kick_fsm(char *buffer, int buffer_len, menu_t * menu)
 	int offset;
 	char *line;
 	char *word;
-	char *lineptr;
+	char *lineptr = NULL;
 	int status, n;
-	menu_t /**menu,*/  * entry, *ptr;
+	menu_t /**menu,*/  * entry = NULL, *ptr = NULL;
 	/*
 	   menu = entry_alloc();
 	   menu->default_os = 0;
@@ -174,7 +176,7 @@ static int kick_fsm(char *buffer, int buffer_len, menu_t * menu)
 	offset = 0;
 	status = S;
 	n = 0;
-	int parse = 1, kernel;
+	int parse = 1, kernel = 0;
 	while (parse) {
 		switch (status) {
 		case S:
@@ -306,9 +308,9 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu)
 	int offset;
 	char *line;
 	char *word;
-	char *lineptr;
+	char *lineptr = NULL;
 	int status, n;
-	menu_t /**menu,*/  * entry, *ptr;
+	menu_t /**menu,*/  * entry = NULL, *ptr = NULL;
 
 	/*
 	   menu = entry_alloc();
@@ -319,7 +321,7 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu)
 	offset = 0;
 	status = S;
 	n = 0;
-	int parse = 1, kernel;
+	int parse = 1, kernel = 0;
 	while (parse) {
 		switch (status) {
 		case S:
@@ -534,32 +536,88 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu)
 	}
 	return 1;
 }
+/*
+typedef struct menu {
+	char *title;
+	char *kernel;
+	char *append;
+	char *initrd;
+	char *modules[MAX_MODULES];
+	int modules_cnt;
+	char *argv[MAX_MODULES];
+	int argc;
+	int device_type;
+	int device_num;
+	int partition;
+	int default_os;
+	int delay;
+	char *server_ip;
+	struct menu *next;
+} menu_t;
+*/
+
+static int dev_load(menu_t *self, boot_dev_t *dev)
+{
+	int n = 0;
+	char *buffer;
+	int buffer_length;
+	buffer = malloc(16 * 0x1000);
+	if ((buffer_length = dev->load_file(dev, MENU_FILE, buffer)) >= 0)
+		n += fsm(buffer, buffer_length, self);
+	if ((buffer_length = dev->load_file(dev, "Kickstart/Kicklayout",
+					    buffer)) >= 0)
+		n += kick_fsm(buffer, buffer_length, self);
+	free(buffer);
+	return n;
+}
+
+static int magic_load(menu_t *self)
+{
+	int i, n;
+	boot_dev_t *dev;
+	menu_t *ptr;
+
+	n = 0;
+	for(i = 0; i < 16; i++) {
+		if((dev = ext2_create(0, i)) == NULL)
+			dev = sfs_create(0, i);
+		if(dev == NULL)
+			continue;
+		ptr = self;
+		n += dev_load(self, dev);
+		for(ptr = ptr->next; ptr != NULL; ptr = ptr->next) {
+			if(ptr->device_type != 0)
+				continue;
+			ptr->device_type = IDE_TYPE;
+			ptr->device_num = 0;
+			ptr->device_type = i;
+		}
+		dev->destroy(dev);
+	}
+	return n;
+}
 
 menu_t *menu_load(boot_dev_t * boot)
 {
 	menu_t *self;
-	char *buffer;
-	int buffer_length;
 	int n;
-
-	buffer = malloc(16 * 0x1000);
-
-	if (buffer == NULL)
-		return NULL;
 
 	self = entry_alloc();
 	self->default_os = 0;
 	self->delay = 5;
-	n = 0;
-	if ((buffer_length = boot->load_file(boot, MENU_FILE, buffer)) >= 0)
-		n = fsm(buffer, buffer_length, self);
-	if ((buffer_length = boot->load_file(boot, "Kickstart/Kicklayout",
-					     buffer)) >= 0)
-		n += kick_fsm(buffer, buffer_length, self);
 
-	free(buffer);
-	if (n == 0)
+	n = 0;
+
+	if(boot != NULL)
+		n = dev_load(self, boot);
+	else
+		n = magic_load(self);
+
+	if (n == 0) {
 		return NULL;
+		free(self);
+	}
+
 	return self;
 }
 

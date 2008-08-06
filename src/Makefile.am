@@ -26,5 +26,5 @@ Parthenope_SOURCES=\
 	parthenope.c
 
 Parthenope_LDFLAGS = -nostartfiles -nodefaultlibs -static -Wl,-s -Wl,-N -Wl,--entry=bootstrap -Wl,--script=ldscript.lds
-CFLAGS = -Wall -fno-builtin -nostdinc -nostdlib -Os -ffixed-r2 -ffixed-r14 -ffixed-r29
+CFLAGS = -Wall -fno-builtin -nostdinc -nostdlib -Os -ffixed-r2 -ffixed-r14 -ffixed-r29 -DVERSION=\"`svn info --xml |grep revision=\" | head -n 1 | sed -e 's|[^"]*"||' -e 's|"[^"]*||'`\"
 
