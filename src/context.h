@@ -34,9 +34,9 @@ typedef struct context {
 	list_t *c_devices_list;
 	SCAN_HANDLE c_curr_device;
 
-	SCAN_HANDLE(*c_start_unit_scan) (const void *scan_list,
+	 SCAN_HANDLE(*c_start_unit_scan) (const void *scan_list,
 					  uint32_t * const blocksize);
-	SCAN_HANDLE(*c_next_unit_scan) (SCAN_HANDLE h,
+	 SCAN_HANDLE(*c_next_unit_scan) (SCAN_HANDLE h,
 					 unsigned int *const blocksize);
 	int (*c_open_specific_unit) (const SCAN_HANDLE h);
 	void (*c_end_unit_scan) (SCAN_HANDLE h);
@@ -93,9 +93,10 @@ typedef struct context {
 	int (*c_ext2fs_read) (char *buf, unsigned len);
 	int (*c_ext2fs_mount) (unsigned part_length);
 	int (*c_ext2fs_close) (void);
+	int (*c_video_display_bitmap) (unsigned long, int, int);
 } context_t;
 
-void context_init(context_t *ctx);
+void context_init(context_t * ctx);
 inline context_t *context_get(void);
 
 /* terminal IO functions */
@@ -108,15 +109,13 @@ inline list_t *get_devices_list(void);
 inline SCAN_HANDLE get_curr_device(void);
 inline SCAN_HANDLE start_unit_scan(const void *scan_list,
 				   uint32_t * const blocksize);
-inline SCAN_HANDLE next_unit_scan(SCAN_HANDLE h,
-				  unsigned int *const blocksize);
+inline SCAN_HANDLE next_unit_scan(SCAN_HANDLE h, unsigned int *const blocksize);
 inline int open_specific_unit(const SCAN_HANDLE h);
 inline void end_unit_scan(SCAN_HANDLE h);
 inline void end_global_scan(void);
 inline int loadsector(const unsigned int sectn,
 		      const unsigned int sect_size,
-		      const unsigned int numb_sects,
-		      void *const dest_buf);
+		      const unsigned int numb_sects, void *const dest_buf);
 inline int netloop(char *filename, void *dump_here);
 
 /* memory functions */
@@ -135,15 +134,16 @@ inline void udelay(unsigned long t);
 
 /* video functions */
 inline void video_clear(void);
-inline void video_draw_box(int style, int attr, char *title, int separate, 
+inline void video_draw_box(int style, int attr, char *title, int separate,
 			   int x, int y, int w, int h);
 inline void video_draw_text(int x, int y, int attr, char *text, int field);
 inline void video_repeat_char(int x, int y, int repcnt, int repchar, int attr);
 inline unsigned short video_set_partial_scroll_limits(const short start,
 						      const short end);
-inline void video_get_partial_scroll_limits(short *const start, 
+inline void video_get_partial_scroll_limits(short *const start,
 					    short *const end);
 inline int video_get_key(void);
+inline int video_display_bitmap(unsigned long, int, int);
 
 /* ext2fs functions */
 inline int ext2fs_set_blk_dev_full(block_dev_desc_t * const rbdd,

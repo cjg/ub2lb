@@ -116,8 +116,7 @@ struct PartitionBlock {
 	uint32_t pb_EReserved[15];
 };
 
-struct AmigaPartitionGeometry
-{
+struct AmigaPartitionGeometry {
 	uint32_t apg_TableSize;
 	uint32_t apg_SizeBlocks;
 	uint32_t apg_Unused1;
@@ -161,6 +160,5 @@ static inline void calculate_checksum(struct AmigaBlock *blk)
 	blk->amiga_ChkSum = blk->amiga_ChkSum - checksum(blk);
 	return;
 }
-
 
 #endif /* _RDB_H */

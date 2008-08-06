@@ -70,25 +70,16 @@ void bzero(void *dest, int length)
 		*d++ = 0;
 }
 
-char *strcpy(char *dest, const char *src) 
+char *strcpy(char *dest, const char *src)
 {
-	return (char *) memmove(dest, src, strlen(src) + 1);
+	return (char *)memmove(dest, src, strlen(src) + 1);
 
 }
 
 char *strncpy(char *dest, const char *src, int n)
 {
-	return (char *) memmove(dest, src, n);
+	return (char *)memmove(dest, src, n);
 }
-
-/* void memcpy(void *dest, const void *src, int length) */
-/* { */
-/* 	const char *s = src; */
-/* 	char *d = dest; */
-
-/* 	while (length--) */
-/* 		*d++ = *s++; */
-/* } */
 
 int StackSwap(struct StackSwapStruct *sss)
 {
@@ -96,7 +87,6 @@ int StackSwap(struct StackSwapStruct *sss)
 	uint32_t *sp;
 	uint32_t *src;
 	uint32_t *dst;
-	void *tmp;
 
 	asm volatile ("wrteei 0");
 
@@ -144,19 +134,18 @@ void *memcpy(void *dest, const void *src, int n)
 
 void *memset(void *dest, int c, int n)
 {
-	char *ptr = (char *) dest;
+	char *ptr = (char *)dest;
 
 	while (n-- > 0)
 		*ptr++ = c;
-	
 	return dest;
 }
 
 char *strchr(char *s, int c)
 {
 	char *sptr;
-	for(sptr = s; *sptr != 0 && *sptr != c; sptr++);
-	if(*sptr == 0)
+	for (sptr = s; *sptr != 0 && *sptr != c; sptr++) ;
+	if (*sptr == 0)
 		return NULL;
 	return sptr;
 }
@@ -173,9 +162,29 @@ int strtol(const char *s)
 {
 	int l, i, m;
 	l = 0;
-	for(i = strlen(s) - 1, m = 1; i >= 0; i--, m*=10) {
+	for (i = strlen(s) - 1, m = 1; i >= 0; i--, m *= 10) {
 		l += (s[i] - 48) * m;
-		
 	}
 	return l;
+}
+
+list_t *list_new(void)
+{
+	list_t *self;
+
+	self = malloc(sizeof(list_t));
+
+	self->l_head = (node_t *) & self->l_tail;
+	self->l_tail = NULL;
+	self->l_tailpred = (node_t *) & self->l_head;
+
+	return self;
+}
+
+void list_append(list_t * self, node_t * node)
+{
+	node->n_succ = (node_t *) & self->l_tail;
+	node->n_pred = self->l_tailpred;
+	node->n_pred->n_succ = node;
+	self->l_tailpred = node;
 }
