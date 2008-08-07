@@ -583,14 +583,13 @@ static int magic_load(menu_t *self)
 			dev = sfs_create(0, i);
 		if(dev == NULL)
 			continue;
-		ptr = self;
 		n += dev_load(self, dev);
-		for(ptr = ptr->next; ptr != NULL; ptr = ptr->next) {
+		for(ptr = self; ptr != NULL; ptr = ptr->next) {
 			if(ptr->device_type != 0)
 				continue;
 			ptr->device_type = IDE_TYPE;
 			ptr->device_num = 0;
-			ptr->device_type = i;
+			ptr->partition = i;
 		}
 		dev->destroy(dev);
 	}

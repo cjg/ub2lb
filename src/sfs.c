@@ -54,6 +54,7 @@ typedef struct {
 	disk_partition_t info;
 	struct SfsObject *root;
 	uint32_t extentbnoderoot;
+	uint32_t blocksize;
 } sfs_boot_dev_t;
 
 uint32_t calcchecksum(struct SfsBlockHeader *block, uint32_t blocksize)
@@ -71,10 +72,10 @@ uint32_t calcchecksum(struct SfsBlockHeader *block, uint32_t blocksize)
 	return -checksum;
 }
 
-static int sfs_loadsector(sfs_boot_dev_t * this, uint32_t block, void *buffer)
+static int sfs_loadsector(sfs_boot_dev_t *self, uint32_t block, void *buffer)
 {
-	return loadsector(this->info.start + (block * 2),
-			  this->info.blksz, 2, buffer);
+	return loadsector(self->info.start + (block * (self->blocksize / 512)),
+			  self->info.blksz, self->blocksize / 512, buffer);
 }
 
 static struct SfsObject *sfs_nextobject(struct SfsObject *o)
@@ -96,14 +97,15 @@ static struct SfsObject *sfs_findobject(sfs_boot_dev_t * self,
 					char *dirname, uint8_t type)
 {
 	void *buffer;
-	buffer = malloc(1024);
 	uint32_t next;
 	struct SfsObject *o;
+
+	buffer = malloc(self->blocksize);
 	next = cwd->object.dir.firstdirblock;
 
 	while (next != 0) {
 		sfs_loadsector(self, next, buffer);
-		if (!calcchecksum(SBH(buffer), 1024)) {
+		if (!calcchecksum(SBH(buffer), self->blocksize)) {
 			printf("Invalid checksum!\n");
 			return NULL;
 		}
@@ -156,10 +158,10 @@ static struct BNode *get_bnode(sfs_boot_dev_t * self, uint32_t key)
 	uint16_t i;
 
 	bnode = NULL;
-	buffer = malloc(1024);
+	buffer = malloc(self->blocksize);
 	next = self->extentbnoderoot;
 	while (sfs_loadsector(self, next, buffer)) {
-		if (!calcchecksum(SBH(buffer), 1024)) {
+		if (!calcchecksum(SBH(buffer), self->blocksize)) {
 			printf("Invalid checksum!\n");
 			return NULL;
 		}
@@ -194,7 +196,7 @@ static int sfs_loadfile(sfs_boot_dev_t * self, char *filename, void *filebuffer)
 		return -1;
 	}
 
-	buffer = malloc(1024);
+	buffer = malloc(self->blocksize);
 
 	next = o->object.file.data;
 	size = o->object.file.size;
@@ -204,7 +206,8 @@ static int sfs_loadfile(sfs_boot_dev_t * self, char *filename, void *filebuffer)
 		sebn = (struct SfsExtentBNode *)get_bnode(self, next);
 		for (i = 0; i < sebn->blocks; i++) {
 			sfs_loadsector(self, next + i, buffer);
-			tocopy = (size - readed >= 1024 ? 1024 : size - readed);
+			tocopy = (size - readed >= self->blocksize 
+				  ? self->blocksize : size - readed);
 			if (filebuffer != NULL)
 				memmove(filebuffer + readed, buffer, tocopy);
 			readed += tocopy;
@@ -241,12 +244,8 @@ boot_dev_t *sfs_create(int discno, int partno)
 		return NULL;
 	}
 
-	buffer = malloc(1024);
-	loadsector(boot->info.start, boot->info.blksz, 2, buffer);
-	if (!calcchecksum(SBH(buffer), 1024)) {
-		printf("Invalid checksum!\n");
-		return NULL;
-	}
+	buffer = malloc(64 * 512);
+	loadsector(boot->info.start, boot->info.blksz, 64, buffer);
 	if (SBH(buffer)->id != SRB_ID) {
 		printf("** Bad sfs partition or disk - %d:%d **\n",
 		       discno, partno);
@@ -256,12 +255,9 @@ boot_dev_t *sfs_create(int discno, int partno)
 	}
 
 	boot->extentbnoderoot = SRB(buffer)->extentbnoderoot;
+	boot->blocksize = SRB(buffer)->blocksize;
 
 	sfs_loadsector(boot, SRB(buffer)->rootobjectcontainer, buffer);
-	if (!calcchecksum(SBH(buffer), 1024)) {
-		printf("Invalid checksum!\n");
-		return NULL;
-	}
 
 	if (SBH(buffer)->id != SOC_ID) {
 		printf("** Root Object Container not found - %d:%d **\n",
