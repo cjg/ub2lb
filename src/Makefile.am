@@ -16,6 +16,7 @@ Parthenope_SOURCES=\
 	image.h\
 	menu.c\
 	menu.h\
+	rdb.c\
 	rdb.h\
 	sfs.c\
 	sfs.h\
@@ -26,5 +27,13 @@ Parthenope_SOURCES=\
 	parthenope.c
 
 Parthenope_LDFLAGS = -nostartfiles -nodefaultlibs -static -Wl,-s -Wl,-N -Wl,--entry=bootstrap -Wl,--script=ldscript.lds
-CFLAGS = -Wall -fno-builtin -nostdinc -nostdlib -Os -ffixed-r2 -ffixed-r14 -ffixed-r29 -DVERSION=\"`svn info --xml |grep revision=\" | head -n 1 | sed -e 's|[^"]*"||' -e 's|"[^"]*||'`\"
+CFLAGS = -Wall -fno-builtin -nostdinc -nostdlib -DIN_PARTHENOPE -Os -DVERSION=\"91\" -DDATE=\"`date +%-d.%-m.%Y`\"
+if USE_UBOOT
+CFLAGS += -ffixed-r2 -ffixed-r14 -ffixed-r29 -DUSE_UBOOT
+endif
+if USE_OPENFIRMWARE
+CFLAGS += -ffreestanding -DUSE_OPENFIRMWARE
+endif
+
+
 

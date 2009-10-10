@@ -20,22 +20,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#define DEBUG 1
-#include "debug.h"
 #include "menu.h"
-#include "iniparser.h"
 #include "ext2.h"
 #include "sfs.h"
+#include "rdb.h"
 
-/*
-typedef struct menu {
-	char *title;
-	char *kernel;
-	char *append;
-	char *initrd;
-	struct menu *next;
-} menu_t;
-*/
+static struct EntryObject *EntryObject_new(char *name, char *args,
+					   char *partition)
+{
+	struct EntryObject *self;
+
+	self = malloc(sizeof(struct EntryObject));
+	self->name = strdup(name);
+	self->args = NULL;
+	if(args != NULL)
+		self->args = strdup(args);
+	self->partition = NULL;
+	if(partition != NULL)
+		self->partition = strdup(partition);
+
+	return self;
+}
 
 static menu_t *entry_alloc(void)
 {
@@ -43,6 +48,7 @@ static menu_t *entry_alloc(void)
 	entry = malloc(sizeof(menu_t));
 	entry->title = NULL;
 	entry->kernel = NULL;
+	entry->other = NULL;
 	entry->append = NULL;
 	entry->initrd = NULL;
 	entry->modules_cnt = 0;
@@ -61,6 +67,8 @@ static void entry_free(menu_t * entry)
 		free(entry->title);
 	if (entry->kernel != NULL)
 		free(entry->kernel);
+	if (entry->other != NULL)
+		free(entry->other);
 	if (entry->append != NULL)
 		free(entry->append);
 	if (entry->initrd != NULL)
@@ -69,7 +77,7 @@ static void entry_free(menu_t * entry)
 	free(entry);
 }
 
-enum states { S, DEF, DLY, TIT, IN, RT, K, RD, M, A, R, AQ, RQ };
+enum states { S, DEF, DLY, TIT, IN, RT, K, O, RD, M, A, R, AQ, RQ };
 
 char *getline(char *src, int src_len, int *src_offset)
 {
@@ -273,7 +281,7 @@ static int kick_fsm(char *buffer, int buffer_len, menu_t * menu)
 			else {
 				status = IN;
 				entry->modules[entry->modules_cnt++] =
-				    strdup(word);
+					EntryObject_new(word, NULL, NULL);
 			}
 			free(line);
 			free(word);
@@ -404,6 +412,8 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu)
 			lineptr = line + strlen(word);
 			if (strcmp(word, "kernel") == 0) {
 				status = K;
+			} else if (strcmp(word, "other") == 0) {
+				status = O;
 			} else if (strcmp(word, "root") == 0) {
 				status = RT;
 			} else if (strcmp(word, "initrd") == 0) {
@@ -487,6 +497,20 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu)
 				free(line);
 			}
 			break;
+		case O:
+			strtrim(lineptr);
+			word = getnextword(lineptr);
+			if (!strlen(word)) {
+				status = R;
+				free(word);
+				free(line);
+				break;
+			}
+			lineptr = lineptr + strlen(word);
+			entry->other = strdup(word);
+			kernel = 1;
+			status = IN;
+			break;
 		case RD:
 			strtrim(lineptr);
 			word = getnextword(lineptr);
@@ -507,7 +531,7 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu)
 			else {
 				status = IN;
 				entry->modules[entry->modules_cnt++] =
-				    strdup(word);
+					EntryObject_new(word, NULL, NULL);
 			}
 			free(line);
 			free(word);
@@ -562,10 +586,12 @@ static int dev_load(menu_t *self, boot_dev_t *dev)
 	char *buffer;
 	int buffer_length;
 	buffer = malloc(16 * 0x1000);
-	if ((buffer_length = dev->load_file(dev, MENU_FILE, buffer)) >= 0)
+	if ((buffer_length = dev->load_file(dev, "menu.lst", buffer)) > 0)
 		n += fsm(buffer, buffer_length, self);
-	if ((buffer_length = dev->load_file(dev, "Kickstart/Kicklayout",
-					    buffer)) >= 0)
+	else if ((buffer_length = dev->load_file(dev, "boot/menu.lst", buffer)) > 0)
+		n += fsm(buffer, buffer_length, self);
+	else if ((buffer_length = dev->load_file(dev, "Kickstart/Kicklayout",
+					    buffer)) > 0)
 		n += kick_fsm(buffer, buffer_length, self);
 	free(buffer);
 	return n;
@@ -576,11 +602,15 @@ static int magic_load(menu_t *self)
 	int i, n;
 	boot_dev_t *dev;
 	menu_t *ptr;
+	struct RdbPartition *partition;
 
 	n = 0;
-	for(i = 0; i < 16; i++) {
-		if((dev = ext2_create(0, i)) == NULL)
-			dev = sfs_create(0, i);
+	for(i = 0; i < RDB_LOCATION_LIMIT; i++) {
+		partition = RdbPartitionTable_get(0, i);
+		if(partition == NULL)
+			break;
+		if((dev = ext2_create(partition)) == NULL)
+			dev = sfs_create(partition);
 		if(dev == NULL)
 			continue;
 		n += dev_load(self, dev);

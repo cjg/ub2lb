@@ -27,10 +27,29 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-typedef unsigned uint32_t;
-typedef int int32_t;
-
 #include "../src/rdb.h"
+
+static int checksum(struct AmigaBlock *_header)
+{
+	struct AmigaBlock *header;
+	header = malloc(512);
+	memmove(header, _header, 512);
+	int32_t *block = (int32_t *) header;
+	uint32_t i;
+	int32_t sum = 0;
+	if (header->amiga_SummedLongss > 512)
+		header->amiga_SummedLongss = 512;
+	for (i = 0; i < header->amiga_SummedLongss; i++)
+		sum += *block++;
+	free(header);
+	return sum;
+}
+
+static inline void calculate_checksum(struct AmigaBlock *blk)
+{
+        blk->amiga_ChkSum = blk->amiga_ChkSum - checksum(blk);
+        return;
+}
 
 static struct AmigaBlock *read_block(FILE * dev,
 				     struct AmigaBlock *blk, uint32_t block)
@@ -194,12 +213,18 @@ void install_slb(FILE * dev, struct RigidDiskBlock *rdb, uint32_t * slb,
 	printf(" done!\n");
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	FILE *dev, *f;
 	struct RigidDiskBlock *rdb;
 	uint32_t rdb_block, *slb, slb_size;
 	struct stat st;
+
+	if (argc != 2) {
+		fprintf(stderr, "parthenope-install: Usage: %s "
+			"/path/to/Parthenope!\n", argv[0]);
+		return -1;
+	}
 
 	dev = fopen("/dev/sda", "w+");
 	if (dev == NULL) {
@@ -214,18 +239,18 @@ int main(void)
 		return -1;
 	}
 
-	if (lstat("Parthenope", &st) < 0) {
+	if (lstat(argv[1], &st) < 0) {
 		fprintf(stderr,
-			"parthenope-install: Cannot stat Parthenope!\n");
+			"parthenope-install: Cannot stat %s!\n", argv[1]);
 		free(rdb);
 		fclose(dev);
 		return -1;
 	}
 
-	f = fopen("Parthenope", "r");
+	f = fopen(argv[1], "r");
 	if (f == NULL) {
 		fprintf(stderr,
-			"parthenope-install: Cannot open Parthenope!\n");
+			"parthenope-install: Cannot open %s!\n", argv[1]);
 		free(rdb);
 		fclose(dev);
 		return -1;

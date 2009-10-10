@@ -31,7 +31,7 @@
 #include "cdrom.h"
 
 char __attribute__ ((__used__)) * version =
-    "\0$VER: Parthenope 0." VERSION " (6.8.2008) "
+    "\0$VER: Parthenope 0." VERSION " (" DATE ") "
     "Copyright (C) 2008 Giuseppe Coviello. "
     "This is free software.  You may redistribute copies of it under the "
     "terms of the GNU General Public License "
@@ -141,7 +141,6 @@ void testboot_standalone(menu_t * entry, void *kernel, boot_dev_t * dev)
 	int argc;
 
 	header = kernel;
-	setenv("stdout", "vga");
 
 	if (header->ih_magic != IH_MAGIC
 	    || header->ih_type != IH_TYPE_STANDALONE)
@@ -180,7 +179,7 @@ void testboot_aros(menu_t * menu, void *kernel, boot_dev_t * boot)
 
 	for (i = 0; i < menu->modules_cnt; i++) {
 		printf("[BOOT] Loading file '%s'\n", menu->modules[i]);
-		if (boot->load_file(boot, menu->modules[i], file_buff) < 0) {
+		if (boot->load_file(boot, menu->modules[i]->name, file_buff) < 0) {
 			return;
 		}
 		if (!load_elf_file(file_buff)) {
@@ -188,7 +187,7 @@ void testboot_aros(menu_t * menu, void *kernel, boot_dev_t * boot)
 			return;
 		}
 		set_progress(i + 2);
-		video_draw_text(7, 9, 0, menu->modules[i], 66);
+		video_draw_text(7, 9, 0, menu->modules[i]->name, 66);
 	}
 
 	void (*entry) (void *);
@@ -279,12 +278,12 @@ void testboot_aos(menu_t * menu, void *kernel, boot_dev_t * boot)
 	module = malloc(sizeof(struct module));
 	void *buffer = malloc(5 * 1024 * 1024);
 	for (i = 0; i < menu->modules_cnt; i++) {
-		video_draw_text(7, 9, 0, menu->modules[i], 66);
-		if ((length = boot->load_file(boot, menu->modules[i],
+		video_draw_text(7, 9, 0, menu->modules[i]->name, 66);
+		if ((length = boot->load_file(boot, menu->modules[i]->name,
 					      buffer)) < 0)
 			return;
 		module = malloc(sizeof(struct module));
-		module->name = menu->modules[i];
+		module->name = menu->modules[i]->name;
 		module->options = NULL;
 		module->id = 0x2;
 		module->flags = 0x3;
@@ -315,12 +314,13 @@ int __startup bootstrap(context_t * ctx)
 	video_clear();
 	video_draw_text(5, 4, 0, " Parthenope (ub2lb) version 0." VERSION, 80);
 
+	RdbPartitionTable_init();
 	boot = get_booting_device();
 
 	menu = menu_load(boot);
 	if (menu == NULL) {
 		setenv("stdout", "vga");
-		printf("No menu.lst found!\n");
+		printf("No menu.lst or Kicklayout found!\n");
 		goto exit;
 	}
 
@@ -329,11 +329,21 @@ int __startup bootstrap(context_t * ctx)
 	if (entry == NULL)
 		goto exit;
 
+	if (entry->other != NULL) 
+		return bootu(entry->other);
+	
 	switch (entry->device_type) {
 	case IDE_TYPE:
-		if ((boot = ext2_create(entry->device_num,
-					entry->partition)) == NULL)
-			boot = sfs_create(entry->device_num, entry->partition);
+	{
+		struct RdbPartition *partition;
+		boot = NULL;
+		partition = RdbPartitionTable_get(entry->device_num,
+						  entry->partition);
+		if(partition == NULL)
+			break;
+		if ((boot = ext2_create(partition)) == NULL)
+			boot = sfs_create(partition);
+	}
 		break;
 	case TFTP_TYPE:
 		boot = tftp_create();

@@ -24,34 +24,10 @@
 #include "rdb.h"
 #include "sfs.h"
 
-static block_dev_desc_t *get_dev(int dev)
-{
-	block_dev_desc_t *bdev = NULL;
-	SCAN_HANDLE hnd;
-	uint32_t blocksize;
-
-	for (hnd = start_unit_scan(get_scan_list(), &blocksize);
-	     hnd != NULL; hnd = next_unit_scan(hnd, &blocksize)) {
-		if (hnd->ush_device.type == DEV_TYPE_HARDDISK) {
-			bdev = malloc(sizeof(block_dev_desc_t));
-			memmove(bdev, &hnd->ush_device,
-				sizeof(block_dev_desc_t));
-			break;
-		}
-	}
-
-	end_unit_scan(hnd);
-	end_global_scan();
-
-	return bdev;
-}
-
-extern int get_partition_info(block_dev_desc_t * dev_desc, int part,
-			      disk_partition_t * info);
 typedef struct {
 	int (*load_file) (void *this, char *filename, void *buffer);
 	void (*destroy) (void *this);
-	disk_partition_t info;
+	struct RdbPartition *partition;
 	struct SfsObject *root;
 	uint32_t extentbnoderoot;
 	uint32_t blocksize;
@@ -74,8 +50,10 @@ uint32_t calcchecksum(struct SfsBlockHeader *block, uint32_t blocksize)
 
 static int sfs_loadsector(sfs_boot_dev_t *self, uint32_t block, void *buffer)
 {
-	return loadsector(self->info.start + (block * (self->blocksize / 512)),
-			  self->info.blksz, self->blocksize / 512, buffer);
+	return loadsector(self->partition->info->start
+			  + (block * (self->blocksize / 512)),
+			  self->partition->info->blksz, self->blocksize / 512, 
+			  buffer);
 }
 
 static struct SfsObject *sfs_nextobject(struct SfsObject *o)
@@ -224,31 +202,21 @@ static int sfs_destroy(sfs_boot_dev_t * this)
 	return 0;
 }
 
-boot_dev_t *sfs_create(int discno, int partno)
+boot_dev_t *sfs_create(struct RdbPartition *partition)
 {
 	sfs_boot_dev_t *boot;
-	block_dev_desc_t *dev_desc = NULL;
 	void *buffer;
 
-	dev_desc = get_dev(discno);
-	if (dev_desc == NULL) {
-		printf("\n** Block device %d not supported\n", discno);
-		return NULL;
-	}
 
 	boot = malloc(sizeof(sfs_boot_dev_t));
-
-	if (get_partition_info(dev_desc, partno, &boot->info)) {
-		printf("** Bad partition %d **\n", partno);
-		free(boot);
-		return NULL;
-	}
+	boot->partition = partition;
 
 	buffer = malloc(64 * 512);
-	loadsector(boot->info.start, boot->info.blksz, 64, buffer);
+	loadsector(boot->partition->info->start, boot->partition->info->blksz, 
+		   64, buffer);
 	if (SBH(buffer)->id != SRB_ID) {
 		printf("** Bad sfs partition or disk - %d:%d **\n",
-		       discno, partno);
+		       boot->partition->disk, boot->partition->partition);
 		free(buffer);
 		free(boot);
 		return NULL;
@@ -261,7 +229,7 @@ boot_dev_t *sfs_create(int discno, int partno)
 
 	if (SBH(buffer)->id != SOC_ID) {
 		printf("** Root Object Container not found - %d:%d **\n",
-		       discno, partno);
+		       boot->partition->disk, boot->partition->partition);
 		free(buffer);
 		free(boot);
 		return NULL;
@@ -280,20 +248,3 @@ boot_dev_t *sfs_create(int discno, int partno)
 	return (boot_dev_t *) boot;
 }
 
-boot_dev_t *sfs_guess_booting(int discno)
-{
-	int i;
-	boot_dev_t *boot;
-	for (i = 0; i < 16; i++) {
-		boot = sfs_create(discno, i);
-		if (boot == NULL)
-			continue;
-		if (sfs_find((sfs_boot_dev_t *) boot, "menu.lst")
-		    || sfs_find((sfs_boot_dev_t *) boot, "boot/menu.lst")
-		    || sfs_find((sfs_boot_dev_t *) boot,
-				"Kickstart/Kicklayout"))
-			return boot;
-		boot->destroy(boot);
-	}
-	return NULL;
-}

@@ -93,7 +93,7 @@ typedef struct context {
 	int (*c_ext2fs_read) (char *buf, unsigned len);
 	int (*c_ext2fs_mount) (unsigned part_length);
 	int (*c_ext2fs_close) (void);
-	int (*c_video_display_bitmap) (unsigned long, int, int);
+	int (*c_bootu) (char *device_str);
 } context_t;
 
 void context_init(context_t * ctx);
@@ -156,5 +156,6 @@ inline int ext2fs_close(void);
 /* booting functions */
 inline int bootm(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
 inline void set_load_addr(void *const la);
+inline int bootu(char *device);
 
 #endif /*CONTEXT_H_ */

@@ -31,6 +31,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = Parthenope$(EXEEXT)
+@USE_UBOOT_TRUE@am__append_1 = -ffixed-r2 -ffixed-r14 -ffixed-r29 -DUSE_UBOOT
+@USE_OPENFIRMWARE_TRUE@am__append_2 = -ffreestanding -DUSE_OPENFIRMWARE
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -44,8 +46,9 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_Parthenope_OBJECTS = cdrom.$(OBJEXT) context.$(OBJEXT) \
-	elf.$(OBJEXT) ext2.$(OBJEXT) menu.$(OBJEXT) sfs.$(OBJEXT) \
-	support.$(OBJEXT) tftp.$(OBJEXT) parthenope.$(OBJEXT)
+	elf.$(OBJEXT) ext2.$(OBJEXT) menu.$(OBJEXT) rdb.$(OBJEXT) \
+	sfs.$(OBJEXT) support.$(OBJEXT) tftp.$(OBJEXT) \
+	parthenope.$(OBJEXT)
 Parthenope_OBJECTS = $(am_Parthenope_OBJECTS)
 Parthenope_LDADD = $(LDADD)
 Parthenope_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(Parthenope_LDFLAGS) \
@@ -70,8 +73,9 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = -Wall -fno-builtin -nostdinc -nostdlib -Os -ffixed-r2 -ffixed-r14 -ffixed-r29 -DVERSION=\"`svn info --xml |grep revision=\" | head -n 1 | sed -e 's|[^"]*"||' -e 's|"[^"]*||'`\"
-CPP = @CPP@
+CFLAGS = -Wall -fno-builtin -nostdinc -nostdlib -DIN_PARTHENOPE -Os \
+	-DVERSION=\"91\" -DDATE=\"`date +%-d.%-m.%Y`\" $(am__append_1) \
+	$(am__append_2)
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
@@ -79,9 +83,7 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -144,6 +146,7 @@ sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = ldscript.lds
@@ -161,6 +164,7 @@ Parthenope_SOURCES = \
 	image.h\
 	menu.c\
 	menu.h\
+	rdb.c\
 	rdb.h\
 	sfs.c\
 	sfs.h\
@@ -243,6 +247,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parthenope.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sfs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/support.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tftp.Po@am__quote@

@@ -23,6 +23,7 @@
 #ifndef _SFS_H
 #define _SFS_H
 
+#include "rdb.h"
 #include "device.h"
 #include "support.h"
 
@@ -135,7 +136,6 @@ struct SfsExtentBNode {
 	uint16_t blocks;
 };
 
-boot_dev_t *sfs_create(int discno, int partno);
-boot_dev_t *sfs_guess_booting(int discno);
+boot_dev_t *sfs_create(struct RdbPartition *partition);
 
 #endif /* _SFS_H */
