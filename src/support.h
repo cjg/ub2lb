@@ -32,6 +32,7 @@ typedef signed char int8_t;
 typedef signed short int16_t;
 typedef signed int int32_t;
 
+#ifdef IN_PARTHENOPE
 int strlen(const char *str);
 int isblank(char c);
 int isspace(char c);
@@ -42,6 +43,7 @@ int strcasecmp(const char *s1, const char *s2);
 int strncmp(const char *s1, const char *s2, int max);
 int strcmp(const char *s1, const char *s2);
 void bzero(void *dest, int length);
+#endif
 
 int StackSwap(struct StackSwapStruct *sss);
 
@@ -56,7 +58,9 @@ int StackSwap(struct StackSwapStruct *sss);
 
 #define MAX_BSS_SECTIONS        1024
 
+#ifdef IN_PARTHENOPE
 #define NULL ((void*)0)
+#endif
 
 #define TAG_USER                0x80000000
 
@@ -80,6 +84,7 @@ int StackSwap(struct StackSwapStruct *sss);
 #define KRN_ARGC                (KRN_Dummy + 17)
 #define KRN_ARGV                (KRN_Dummy + 18)
 
+#ifdef IN_PARTHENOPE
 char *strcpy(char *dest, const char *src);
 char *strncpy(char *dest, const char *src, int n);
 char *strchr(char *s, int c);
@@ -89,5 +94,6 @@ int strtol(const char *s);
 void *calloc(int size, int n);
 void *memcpy(void *dest, const void *src, int n);
 void *memset(void *s, int c, int n);
+#endif
 
 #endif /*SUPPORT_H_ */

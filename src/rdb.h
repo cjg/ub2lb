@@ -23,6 +23,19 @@
 #ifndef _RDB_H
 #define _RDB_H
 
+/* #ifndef EXTERNAL_TOOL */
+#include "support.h"
+#include "uboot.h"
+
+struct RdbPartition {
+	char *name;
+	uint8_t disk;
+	uint8_t partition;
+	block_dev_desc_t *dev_desc;
+	disk_partition_t *info;
+};
+/* #endif */
+
 #define RDB_LOCATION_LIMIT 16
 
 #define	IDNAME_RIGIDDISK	(uint32_t)0x5244534B	/* 'RDSK' */
@@ -139,26 +152,9 @@ struct AmigaPartitionGeometry {
 	uint32_t apg_BootBlocks;
 };
 
-static inline int checksum(struct AmigaBlock *_header)
-{
-	struct AmigaBlock *header;
-	header = malloc(512);
-	memmove(header, _header, 512);
-	int32_t *block = (int32_t *) header;
-	uint32_t i;
-	int32_t sum = 0;
-	if (header->amiga_SummedLongss > 512)
-		header->amiga_SummedLongss = 512;
-	for (i = 0; i < header->amiga_SummedLongss; i++)
-		sum += *block++;
-	free(header);
-	return sum;
-}
-
-static inline void calculate_checksum(struct AmigaBlock *blk)
-{
-	blk->amiga_ChkSum = blk->amiga_ChkSum - checksum(blk);
-	return;
-}
+void RdbPartitionTable_init(void);
+struct RdbPartition *RdbPartitionTable_get(uint8_t disk, uint8_t partition);
+struct RdbPartition *RdbPartitionTable_getbyname(char *name);
+void RdbPartitionTable_dump(void);
 
 #endif /* _RDB_H */

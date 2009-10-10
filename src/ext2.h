@@ -23,9 +23,9 @@
 #ifndef _EXT2_H
 #define _EXT2_H
 
+#include "rdb.h"
 #include "device.h"
 
-boot_dev_t *ext2_create(int discno, int partno);
-boot_dev_t *ext2_guess_booting(int discno);
+boot_dev_t *ext2_create(struct RdbPartition *partition);
 
 #endif /* _EXT2_H */

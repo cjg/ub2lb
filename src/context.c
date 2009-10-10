@@ -181,11 +181,6 @@ inline int video_get_key(void)
 	return context->c_video_get_key();
 }
 
-inline int video_display_bitmap(unsigned long addr, int x, int y)
-{
-	return context->c_video_display_bitmap(addr, x, y);
-}
-
 /* ext2fs functions */
 inline int ext2fs_set_blk_dev_full(block_dev_desc_t * const rbdd,
 				   disk_partition_t * const p)
@@ -222,4 +217,11 @@ inline int bootm(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 inline void set_load_addr(void *const la)
 {
 	return context->c_set_load_addr(la);
+}
+
+inline int bootu(char *device)
+{
+	setenv("stdout", "vga");
+	setenv("boot1", device);
+	return context->c_bootu(device);
 }

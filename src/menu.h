@@ -26,20 +26,27 @@
 #include "context.h"
 #include "device.h"
 
-#define MENU_FILE "menu.lst"
-#define DEFAULT_TYPE 0
+#define DEFAULT_TYPE  0
 #define IDE_TYPE      1
-#define TFTP_TYPE    2
-#define CD_TYPE      3
+#define TFTP_TYPE     2
+#define CD_TYPE       3
 
 #define MAX_MODULES 100
+
+struct EntryObject {
+	char *name;
+	char *args;
+	char *partition;
+};
 
 typedef struct menu {
 	char *title;
 	char *kernel;
+	char *other;
 	char *append;
 	char *initrd;
-	char *modules[MAX_MODULES];
+	struct EntryObject *modules[MAX_MODULES];
+/* 	char *modules[MAX_MODULES]; */
 	int modules_cnt;
 	char *argv[MAX_MODULES];
 	int argc;
