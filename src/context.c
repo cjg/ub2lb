@@ -223,7 +223,7 @@ inline void set_load_addr(void *const la)
 
 inline int bootu(char *device)
 {
-	setenv("stdout", "vga");
+	//setenv("stdout", "vga");
 	setenv("boot1", device);
 	return context->c_bootu(device);
 }

@@ -158,4 +158,6 @@ inline int bootm(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
 inline void set_load_addr(void *const la);
 inline int bootu(char *device);
 
+extern char *version;
+
 #endif /*CONTEXT_H_ */

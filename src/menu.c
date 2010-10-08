@@ -24,6 +24,7 @@
 #include "ext2.h"
 #include "sfs.h"
 #include "rdb.h"
+#include "parthenope.h"
 
 static struct EntryObject *EntryObject_new(char *name, char *args,
 					   char *partition)
@@ -682,10 +683,69 @@ menu_t *display(menu_t * self, int selected)
 	return sentry;
 }
 
+
+static menu_t *menu_display_serial(menu_t *self)
+{
+	menu_t *entry;
+	char k;
+	int i, delay, max, selected, old_delay;
+	
+	for (max = -2, entry = self; entry != NULL;
+	     entry = entry->next, max++) ;
+
+	selected = self->default_os <= max ? self->default_os : max;
+	
+	for(i = 0; i < 100; i++)
+		printf("\n");
+
+	printf("Parthenope (ub2lb) version 0." VERSION "\n");
+	printf("===============================\n");
+
+	for(i = 0, k = 'a', entry = self->next; entry != NULL; 
+		entry = entry->next, i++, k++) 
+		printf("%c%s: %s\n", k, (i == selected ? "*" : ""), 
+			entry->title);
+	printf("\nz: Exit to UBoot prompt\nDelay %d: ", self->delay);
+
+	delay = self->delay * 100;
+	old_delay = delay;
+	while (delay) {
+		if(delay < old_delay - 100) {
+			printf("\b\b\b%d: ", delay / 100);
+			old_delay = delay;
+		}
+		if(tstc())
+			break;
+		udelay(10000);
+		delay--;
+	}
+
+	if(delay == 0) {
+		for(i = 0, entry = self->next; entry != NULL; 
+			entry = entry->next, i++) 
+			if(i == selected)
+				return entry;
+	} else {
+		selected = getc();
+		if(selected == 'z')
+			return entry;
+		for(k = 'a', entry = self->next; entry != NULL; 
+			entry = entry->next, k++) 
+			if(k == selected)
+				return entry;
+	}
+	
+	return NULL;
+}
+
 menu_t *menu_display(menu_t * self)
 {
 	int key, max, selected, delay, old_delay;
 	menu_t *entry;
+
+	if(strcmp(getenv("stdout"), "vga"))
+		return menu_display_serial(self);
+
 	for (max = -2, entry = self; entry != NULL;
 	     entry = entry->next, max++) ;
 
