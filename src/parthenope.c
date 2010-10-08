@@ -30,14 +30,6 @@
 #include "image.h"
 #include "cdrom.h"
 
-char __attribute__ ((__used__)) * version =
-    "\0$VER: Parthenope 0." VERSION " (" DATE ") "
-    "Copyright (C) 2008 Giuseppe Coviello. "
-    "This is free software.  You may redistribute copies of it under the "
-    "terms of the GNU General Public License "
-    "<http://www.gnu.org/licenses/gpl.html>. There is NO WARRANTY, "
-    "to the extent permitted by law.";
-
 extern unsigned long __bss_start;
 extern unsigned long _end;
 
@@ -110,7 +102,7 @@ void testboot_linux(menu_t * entry, void *kernel, boot_dev_t * dev)
 	    || header->ih_os != IH_OS_LINUX)
 		return;
 
-	setenv("stdout", "vga");
+	//setenv("stdout", "vga");
 	printf("We should boot %s:\n\t%s %s\n\t%s\n", entry->title,
 	       entry->kernel, entry->append, entry->initrd);
 
@@ -149,7 +141,7 @@ void testboot_standalone(menu_t * entry, void *kernel, boot_dev_t * dev)
 		return;
 
 	setenv("autostart", "yes");
-	setenv("stdout", "vga");
+	//setenv("stdout", "vga");
 
 	argc = 2;
 	argv[0] = "bootm";
@@ -315,7 +307,6 @@ int __startup bootstrap(context_t * ctx)
 
 	context_init(ctx);
 
-	setenv("stdout", "serial");
 
 	debug_info = list_new();
 
@@ -327,7 +318,7 @@ int __startup bootstrap(context_t * ctx)
 
 	menu = menu_load(boot);
 	if (menu == NULL) {
-		setenv("stdout", "vga");
+		//setenv("stdout", "vga");
 		printf("No menu.lst or Kicklayout found!\n");
 		goto exit;
 	}
@@ -377,7 +368,7 @@ int __startup bootstrap(context_t * ctx)
 
 	boot->destroy(boot);
 exit:
-	setenv("stdout", "vga");
+	//setenv("stdout", "vga");
 	printf("Press a key to open U-Boot prompt!\n");
 	video_get_key();
 	return 0;
