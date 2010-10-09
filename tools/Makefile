@@ -12,4 +12,4 @@ parthenope-install: $(OBJECTS)
 	$(CC) $(CFLAGS) -fPIC -c $<
 	
 clean:
-	-rm -rf ub2lb $(OBJECTS)
+	-rm -rf parthenope-install $(OBJECTS)
