@@ -122,9 +122,9 @@ inline void *memmove(void *dest, const void *src, int count)
 }
 
 /* ENV functions */
-inline char *getenv(unsigned char *var)
+inline char *getenv(char *var)
 {
-	return context->c_getenv(var);
+	return context->c_getenv((unsigned char *) var);
 }
 
 inline void setenv(char *var, char *value)

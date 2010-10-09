@@ -47,6 +47,9 @@ static block_dev_desc_t *get_dev(int dev)
 	SCAN_HANDLE hnd;
 	uint32_t blocksize;
 
+	/* FIXME: find a better way to avoid unused warning */
+	dev = dev;
+
 	for (hnd = start_unit_scan(get_scan_list(), &blocksize);
 	     hnd != NULL; hnd = next_unit_scan(hnd, &blocksize)) {
 		if (hnd->ush_device.type == DEV_TYPE_HARDDISK) {
@@ -172,6 +175,9 @@ void RdbPartitionTable_init(void)
 
 struct RdbPartition *RdbPartitionTable_get(uint8_t disk, uint8_t partition)
 {
+	/* FIXME: find a better way to avoid unused warning */
+	disk = disk;
+	
 	if(partition >= RDB_LOCATION_LIMIT || table[partition].name == NULL)
 		return NULL;
 	return &table[partition];

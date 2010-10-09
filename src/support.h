@@ -50,6 +50,7 @@ static inline void add_tail(list_t *l, node_t *n)
         l->l_tailpred = n;
 }
 
+#ifdef IN_PARTHENOPE
 static inline node_t *remove(node_t *n)
 {
         n->n_pred->n_succ = n->n_succ;
@@ -57,6 +58,7 @@ static inline node_t *remove(node_t *n)
 
         return n;
 }
+#endif
 
 list_t *list_new(void);
 void list_append(list_t * self, node_t * node);

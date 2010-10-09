@@ -24,6 +24,9 @@
 
 static int load_file(boot_dev_t * this, char *filename, void *buffer)
 {
+	/* FIXME: find a better way to avoid unused warning */
+	this = this;
+	
 	return netloop(filename, buffer);
 }
 

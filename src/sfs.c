@@ -144,7 +144,7 @@ static struct BNode *get_bnode(sfs_boot_dev_t * self, uint32_t key)
 			return NULL;
 		}
 		bnode = NULL;
-		for (i = SBNC(buffer)->btc.nodecount - 1; i >= 0; i--) {
+		for (i = SBNC(buffer)->btc.nodecount - 1; ; i--) {
 			tmp = (struct BNode *)(((uint8_t *) SBNC(buffer)->btc.
 						bnode) +
 					       i * SBNC(buffer)->btc.nodesize);

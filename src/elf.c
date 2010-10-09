@@ -301,7 +301,7 @@ int load_elf_file(const char *name, void *file)
 					if (!mod->m_str)
 					{
 						mod->m_str = malloc(sh[i].size);
-						memcpy(mod->m_str, sh[i].addr, sh[i].size);
+						memcpy(mod->m_str, (char *) sh[i].addr, sh[i].size);
 
 						(printf("[BOOT] symbol table copied from %p to %p\n", sh[i].addr, mod->m_str));
 					}
@@ -328,7 +328,7 @@ int load_elf_file(const char *name, void *file)
 				{
 					struct symbol *st = (struct symbol *)sh[i].addr;
 
-					for (j=0; j < (sh[i].size / sizeof(struct symbol)); j++)
+					for (j=0; j < (int) (sh[i].size / sizeof(struct symbol)); j++)
 					{
 						if (sh[st[j].shindex].addr && (sh[st[j].shindex].flags & (SHF_ALLOC | SHF_EXECINSTR)) == (SHF_ALLOC | SHF_EXECINSTR))
 						{
@@ -337,7 +337,7 @@ int load_elf_file(const char *name, void *file)
 							sym->s_lowest = sh[st[j].shindex].addr + st[j].value + KERNEL_VIRT_BASE - KERNEL_PHYS_BASE;
 							sym->s_highest = sym->s_lowest + st[j].size;
 
-							add_head(&mod->m_symbols, sym);
+							add_head(&mod->m_symbols, (node_t *) sym);
 						}
 					}
 
@@ -345,7 +345,7 @@ int load_elf_file(const char *name, void *file)
 				}
 			}
 
-			add_head(debug_info, mod);
+			add_head(debug_info, (node_t *) mod);
 		}
 	}
 

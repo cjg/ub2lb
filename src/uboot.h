@@ -22,7 +22,9 @@
 
 #include "support.h"
 
+#ifdef IN_PARTHENOPE
 register void *global_data asm("r29");
+#endif
 
 /* 
  * This typedefs have to be replaced with proper definitions from 

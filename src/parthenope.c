@@ -134,6 +134,10 @@ void testboot_standalone(menu_t * entry, void *kernel, boot_dev_t * dev)
 	char *argv[2];
 	int argc;
 
+	/* FIXME: find a better way to avoid unused warning */
+	entry = entry;
+	dev = dev;
+
 	header = kernel;
 
 	if (header->ih_magic != IH_MAGIC
@@ -295,7 +299,7 @@ void testboot_aos(menu_t * menu, void *kernel, boot_dev_t * boot)
 	}
 	((void (*)(unsigned char *, void *, void *, void *))
 	 kernel) (NULL, list, context_get()->c_get_board_info(),
-		  getenv((unsigned char *)"os4_commandline"));
+		  getenv("os4_commandline"));
 }
 
 int __startup bootstrap(context_t * ctx)
