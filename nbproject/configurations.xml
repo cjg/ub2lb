@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="69">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <df name="ub2lb" root="/home/cjg/ub2lb">
+      <df name="src" kind="SOURCE_LOGICAL_FOLDER">
+        <in>cdrom.c</in>
+        <in>cdrom.h</in>
+        <in>context.c</in>
+        <in>context.h</in>
+        <in>debug.h</in>
+        <in>device.h</in>
+        <in>elf.c</in>
+        <in>elf.h</in>
+        <in>ext2.c</in>
+        <in>ext2.h</in>
+        <in>image.h</in>
+        <in>menu.c</in>
+        <in>menu.h</in>
+        <in>parthenope.c</in>
+        <in>parthenope.h</in>
+        <in>rdb.c</in>
+        <in>rdb.h</in>
+        <in>sfs.c</in>
+        <in>sfs.h</in>
+        <in>support.c</in>
+        <in>support.h</in>
+        <in>tftp.c</in>
+        <in>tftp.h</in>
+        <in>uboot.h</in>
+      </df>
+      <df name="tools" kind="SOURCE_LOGICAL_FOLDER">
+        <in>parthenope-install.c</in>
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>/home/cjg/ub2lb/Makefile</itemPath>
+      <itemPath>Makefile-ub2lb.mk</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceRootList>
+    <Elem>/home/cjg/ub2lb</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile-ub2lb.mk</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>/home/cjg/ub2lb</buildCommandWorkingDir>
+          <buildCommand>$(MAKE) -f Makefile</buildCommand>
+          <cleanCommand>$(MAKE) -f Makefile clean</cleanCommand>
+          <executablePath></executablePath>
+        </makeTool>
+      </makefileType>
+    </conf>
+  </confs>
+</configurationDescriptor>
