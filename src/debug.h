@@ -1,9 +1,10 @@
-#ifndef DEBUG_H_
-#define DEBUG_H_
-
 /*
- * $Id: debug.h 25 2008-01-26 11:20:14Z michalsc $
- * 
+ * ub2lb -- UBoot second level bootloader.
+ *
+ * Copyright (C) 2006 - 2010  Giuseppe Coviello <cjg@cruxppc.org>.
+ *
+ * This file is part of ub2lb.
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of
@@ -18,7 +19,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
+ *
+ * Written by: Michal Schulz <michalsc@users.sourceforge.net>
  */
+
+#ifndef DEBUG_H_
+#define DEBUG_H_
 
 #include <context.h>
 

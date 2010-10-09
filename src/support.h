@@ -1,62 +1,84 @@
+/*
+ * ub2lb -- UBoot second level bootloader.
+ *
+ * Copyright (C) 2006 - 2010  Giuseppe Coviello <cjg@cruxppc.org>.
+ *
+ * This file is part of ub2lb.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
+ * Written by: Michal Schulz <michalsc@users.sourceforge.net>
+ */
+
 #ifndef SUPPORT_H_
 #define SUPPORT_H_
 
 typedef struct node {
-	struct node *n_succ, *n_pred;
+    struct node *n_succ, *n_pred;
 } node_t;
 
 typedef struct list {
-	struct node *l_head, *l_tail, *l_tailpred;
+    struct node *l_head, *l_tail, *l_tailpred;
 } list_t;
 
 typedef struct {
-	node_t			m_node;
-	char *			m_name;
-	char *			m_str;
-	unsigned long	m_lowest;
-	unsigned long	m_highest;
-	list_t			m_symbols;
+    node_t m_node;
+    char * m_name;
+    char * m_str;
+    unsigned long m_lowest;
+    unsigned long m_highest;
+    list_t m_symbols;
 } module_t;
 
 typedef struct {
-	node_t          s_node;
-	char *			s_name;
-	unsigned long   s_lowest;
-	unsigned long 	s_highest;
+    node_t s_node;
+    char * s_name;
+    unsigned long s_lowest;
+    unsigned long s_highest;
 } symbol_t;
 
-static inline void new_list(list_t *l)
-{
-        l->l_tailpred = (node_t *)l;
-        l->l_tail     = (node_t *)0;
-        l->l_head     = (node_t *)&l->l_tail;
+static inline void new_list(list_t *l) {
+    l->l_tailpred = (node_t *) l;
+    l->l_tail = (node_t *) 0;
+    l->l_head = (node_t *) & l->l_tail;
 }
 
-static inline void add_head(list_t *l, node_t *n)
-{
-        n->n_succ = l->l_head;
-        n->n_pred = (node_t *)&l->l_head;
+static inline void add_head(list_t *l, node_t *n) {
+    n->n_succ = l->l_head;
+    n->n_pred = (node_t *) & l->l_head;
 
-        l->l_head->n_pred = n;
-        l->l_head = n;
+    l->l_head->n_pred = n;
+    l->l_head = n;
 }
 
-static inline void add_tail(list_t *l, node_t *n)
-{
-        n->n_succ = (node_t *)&l->l_tail;
-        n->n_pred = l->l_tailpred;
+static inline void add_tail(list_t *l, node_t *n) {
+    n->n_succ = (node_t *) & l->l_tail;
+    n->n_pred = l->l_tailpred;
 
-        l->l_tailpred->n_succ = n;
-        l->l_tailpred = n;
+    l->l_tailpred->n_succ = n;
+    l->l_tailpred = n;
 }
 
 #ifdef IN_PARTHENOPE
-static inline node_t *remove(node_t *n)
-{
-        n->n_pred->n_succ = n->n_succ;
-        n->n_succ->n_pred = n->n_pred;
 
-        return n;
+static inline node_t *remove(node_t *n) {
+    n->n_pred->n_succ = n->n_succ;
+    n->n_succ->n_pred = n->n_pred;
+
+    return n;
 }
 #endif
 
@@ -64,11 +86,11 @@ list_t *list_new(void);
 void list_append(list_t * self, node_t * node);
 
 typedef struct tagitem {
-	unsigned long ti_tag, ti_data;
+    unsigned long ti_tag, ti_data;
 } tagitem_t;
 
 struct StackSwapStruct {
-	void *stk_Pointer;	/* Stack pointer at switch point */
+    void *stk_Pointer; /* Stack pointer at switch point */
 };
 
 /* Markers for .bss section in the file. They will be used to clear BSS out */

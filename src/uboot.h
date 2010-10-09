@@ -1,9 +1,10 @@
-#ifndef UBOOT_H_
-#define UBOOT_H_
-
 /*
- * $Id: uboot.h 48 2008-03-19 23:27:08Z michalsc $
- * 
+ * ub2lb -- UBoot second level bootloader.
+ *
+ * Copyright (C) 2006 - 2010  Giuseppe Coviello <cjg@cruxppc.org>.
+ *
+ * This file is part of ub2lb.
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of
@@ -18,7 +19,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
+ *
+ * Written by: Michal Schulz <michalsc@users.sourceforge.net>
  */
+
+#ifndef UBOOT_H_
+#define UBOOT_H_
 
 #include "support.h"
 
@@ -35,25 +41,25 @@ typedef void cmd_tbl_t;
 typedef unsigned long lbaint_t;
 
 typedef struct block_dev_desc {
-	int if_type;		/* type of the interface */
-	int dev;		/* device number */
-	unsigned char part_type;	/* partition type */
-	unsigned char target;	/* target SCSI ID */
-	unsigned char lun;	/* target LUN */
-	unsigned char type;	/* device type */
-	unsigned char removable;	/* removable device */
-	unsigned char lba48;	/* device can use 48bit addr (ATA/ATAPI v7) */
-	lbaint_t lba;		/* number of blocks */
-	unsigned long blksz;	/* block size */
-	unsigned char vendor[40 + 1];	/* IDE model, SCSI Vendor */
-	unsigned char product[20 + 1];	/* IDE Serial no, SCSI product */
-	unsigned char revision[8 + 1];	/* firmware revision */
-	unsigned long (*block_read) (int dev,
-				     unsigned long start,
-				     lbaint_t blkcnt, void *buffer);
-	unsigned long (*block_write) (int dev,
-				      unsigned long start,
-				      lbaint_t blkcnt, const void *buffer);
+    int if_type; /* type of the interface */
+    int dev; /* device number */
+    unsigned char part_type; /* partition type */
+    unsigned char target; /* target SCSI ID */
+    unsigned char lun; /* target LUN */
+    unsigned char type; /* device type */
+    unsigned char removable; /* removable device */
+    unsigned char lba48; /* device can use 48bit addr (ATA/ATAPI v7) */
+    lbaint_t lba; /* number of blocks */
+    unsigned long blksz; /* block size */
+    unsigned char vendor[40 + 1]; /* IDE model, SCSI Vendor */
+    unsigned char product[20 + 1]; /* IDE Serial no, SCSI product */
+    unsigned char revision[8 + 1]; /* firmware revision */
+    unsigned long (*block_read) (int dev,
+            unsigned long start,
+            lbaint_t blkcnt, void *buffer);
+    unsigned long (*block_write) (int dev,
+            unsigned long start,
+            lbaint_t blkcnt, const void *buffer);
 } block_dev_desc_t;
 
 /* Interface types: */
@@ -81,31 +87,31 @@ typedef struct block_dev_desc {
 #define DEV_TYPE_NETBOOT        0x81	/* Netboot through TFTP */
 
 typedef struct disk_partition {
-	unsigned start;		/* # of first block in partition        */
-	uint32_t size;		/* number of blocks in partition        */
-	uint32_t blksz;		/* block size in bytes                  */
-	uint8_t name[32];	/* partition name                       */
-	uint8_t type[32];	/* string type description              */
+    unsigned start; /* # of first block in partition        */
+    uint32_t size; /* number of blocks in partition        */
+    uint32_t blksz; /* block size in bytes                  */
+    uint8_t name[32]; /* partition name                       */
+    uint8_t type[32]; /* string type description              */
 } disk_partition_t;
 
 typedef struct {
-	node_t ush_link;
-	uint16_t ush_bustype;
-	uint16_t ush_already_scanned;
-	block_dev_desc_t ush_device;
+    node_t ush_link;
+    uint16_t ush_bustype;
+    uint16_t ush_already_scanned;
+    block_dev_desc_t ush_device;
 } *SCAN_HANDLE;
 
 enum bustype {
-	BUSTYPE_VIA_ATA,
-	BUSTYPE_SCSI,
-	BUSTYPE_USB,
-	BUSTYPE_NET,
-	BUSTYPE_FLOPPY,
-	BUSTYPE_SIL_PARALLEL,
-	BUSTYPE_SIL_SERIAL,
-	BUSTYPE_SIL_4_SERIAL,
+    BUSTYPE_VIA_ATA,
+    BUSTYPE_SCSI,
+    BUSTYPE_USB,
+    BUSTYPE_NET,
+    BUSTYPE_FLOPPY,
+    BUSTYPE_SIL_PARALLEL,
+    BUSTYPE_SIL_SERIAL,
+    BUSTYPE_SIL_4_SERIAL,
 
-	BUSTYPE_NONE
+    BUSTYPE_NONE
 };
 
 #define NO_ERROR             0

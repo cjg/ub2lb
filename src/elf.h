@@ -1,9 +1,10 @@
-#ifndef ELF_H_
-#define ELF_H_
-
 /*
- * $Id: elf.h 32 2008-02-06 23:24:20Z michalsc $
- * 
+ * ub2lb -- UBoot second level bootloader.
+ *
+ * Copyright (C) 2006 - 2010  Giuseppe Coviello <cjg@cruxppc.org>.
+ *
+ * This file is part of ub2lb.
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of
@@ -18,13 +19,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
+ *
+ * Written by: Michal Schulz <michalsc@users.sourceforge.net>
  */
+
+#ifndef ELF_H_
+#define ELF_H_
 
 #include "context.h"
 
 struct bss_tracker {
-	void *addr;
-	unsigned int length;
+    void *addr;
+    unsigned int length;
 };
 
 extern struct bss_tracker tracker[];
@@ -84,59 +90,59 @@ char *get_ptr_ro();
 #define ELF32_R_INFO(sym, type) (((sym) << 8) + ((type) & 0xff))
 
 struct elfheader {
-	uint8_t ident[16];
-	uint16_t type;
-	uint16_t machine;
-	uint32_t version;
-	uint32_t entry;
-	uint32_t phoff;
-	uint32_t shoff;
-	uint32_t flags;
-	uint16_t ehsize;
-	uint16_t phentsize;
-	uint16_t phnum;
-	uint16_t shentsize;
-	uint16_t shnum;
-	uint16_t shstrndx;
+    uint8_t ident[16];
+    uint16_t type;
+    uint16_t machine;
+    uint32_t version;
+    uint32_t entry;
+    uint32_t phoff;
+    uint32_t shoff;
+    uint32_t flags;
+    uint16_t ehsize;
+    uint16_t phentsize;
+    uint16_t phnum;
+    uint16_t shentsize;
+    uint16_t shnum;
+    uint16_t shstrndx;
 };
 
 struct sheader {
-	uint32_t name;
-	uint32_t type;
-	uint32_t flags;
-	uint32_t addr;
-	uint32_t offset;
-	uint32_t size;
-	uint32_t link;
-	uint32_t info;
-	uint32_t addralign;
-	uint32_t entsize;
+    uint32_t name;
+    uint32_t type;
+    uint32_t flags;
+    uint32_t addr;
+    uint32_t offset;
+    uint32_t size;
+    uint32_t link;
+    uint32_t info;
+    uint32_t addralign;
+    uint32_t entsize;
 };
 
 struct pheader {
-	uint32_t p_type;	/* Segment type */
-	uint32_t p_offset;	/* Segment file offset */
-	uint32_t p_vaddr;	/* Segment virtual address */
-	uint32_t p_paddr;	/* Segment physical address */
-	uint32_t p_filesz;	/* Segment size in file */
-	uint32_t p_memsz;	/* Segment size in memory */
-	uint32_t p_flags;	/* Segment flags */
-	uint32_t p_align;	/* Segment alignment */
+    uint32_t p_type; /* Segment type */
+    uint32_t p_offset; /* Segment file offset */
+    uint32_t p_vaddr; /* Segment virtual address */
+    uint32_t p_paddr; /* Segment physical address */
+    uint32_t p_filesz; /* Segment size in file */
+    uint32_t p_memsz; /* Segment size in memory */
+    uint32_t p_flags; /* Segment flags */
+    uint32_t p_align; /* Segment alignment */
 };
 
 struct symbol {
-	uint32_t name;
-	uint32_t value;
-	uint32_t size;
-	uint8_t info;
-	uint8_t other;
-	uint16_t shindex;
+    uint32_t name;
+    uint32_t value;
+    uint32_t size;
+    uint8_t info;
+    uint8_t other;
+    uint16_t shindex;
 };
 
 struct relo {
-	uint32_t offset;
-	uint32_t info;
-	int32_t addend;
+    uint32_t offset;
+    uint32_t info;
+    int32_t addend;
 };
 
 #endif /*ELF_H_ */
