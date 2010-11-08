@@ -1,36 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
-    <df name="ub2lb" root="/home/cjg/ub2lb">
-      <df name="src" kind="SOURCE_LOGICAL_FOLDER">
-        <in>cdrom.c</in>
-        <in>cdrom.h</in>
-        <in>context.c</in>
-        <in>context.h</in>
-        <in>debug.h</in>
-        <in>device.h</in>
-        <in>elf.c</in>
-        <in>elf.h</in>
-        <in>ext2.c</in>
-        <in>ext2.h</in>
-        <in>image.h</in>
-        <in>menu.c</in>
-        <in>menu.h</in>
-        <in>parthenope.c</in>
-        <in>parthenope.h</in>
-        <in>rdb.c</in>
-        <in>rdb.h</in>
-        <in>sfs.c</in>
-        <in>sfs.h</in>
-        <in>support.c</in>
-        <in>support.h</in>
-        <in>tftp.c</in>
-        <in>tftp.h</in>
-        <in>uboot.h</in>
-      </df>
-      <df name="tools" kind="SOURCE_LOGICAL_FOLDER">
-        <in>parthenope-install.c</in>
-      </df>
+    <df name="src" root="src">
+      <in>Makefile</in>
+      <in>cdrom.c</in>
+      <in>cdrom.h</in>
+      <in>context.c</in>
+      <in>context.h</in>
+      <in>debug.h</in>
+      <in>device.h</in>
+      <in>elf.c</in>
+      <in>elf.h</in>
+      <in>ext2.c</in>
+      <in>ext2.h</in>
+      <in>image.h</in>
+      <in>ldscript.lds</in>
+      <in>menu.c</in>
+      <in>menu.h</in>
+      <in>parthenope.c</in>
+      <in>parthenope.h</in>
+      <in>rdb.c</in>
+      <in>rdb.h</in>
+      <in>sfs.c</in>
+      <in>sfs.h</in>
+      <in>support.c</in>
+      <in>support.h</in>
+      <in>tftp.c</in>
+      <in>tftp.h</in>
+      <in>uboot.h</in>
+    </df>
+    <df name="tools" root="tools">
+      <in>Makefile</in>
+      <in>parthenope-install.c</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -41,7 +42,8 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>/home/cjg/ub2lb</Elem>
+    <Elem>src</Elem>
+    <Elem>tools</Elem>
   </sourceRootList>
   <projectmakefile>Makefile-ub2lb.mk</projectmakefile>
   <confs>

@@ -11,7 +11,8 @@
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
-                <sourceRootElem>/home/cjg/ub2lb</sourceRootElem>
+                <sourceRootElem>src</sourceRootElem>
+                <sourceRootElem>tools</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>Default</confElem>

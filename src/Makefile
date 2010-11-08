@@ -30,9 +30,17 @@ CFLAGS += -ffixed-r2 -ffixed-r14 -ffixed-r29 -DUSE_UBOOT
 
 OBJECTS := $(patsubst %.c,%.o,$(filter %.c, $(SOURCES)))
 
-ifdef CROSS_COMPILE
-	CC = $(CROSS_COMPILE)gcc
+
+ifndef CROSS_COMPILE
+ifneq ($(shell arch),powerpc)
+ARCH=ppc
+CROSS_COMPILE=ppc_4xxFP-
 endif
+endif
+
+CC = $(CROSS_COMPILE)gcc
+
+
 
 all: ub2lb
 
