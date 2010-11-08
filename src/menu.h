@@ -48,6 +48,7 @@ typedef struct menu {
     char *other;
     char *append;
     char *initrd;
+    char *dtb; 
     struct EntryObject * modules[MAX_MODULES];
     /* 	char *modules[MAX_MODULES]; */
     int modules_cnt;

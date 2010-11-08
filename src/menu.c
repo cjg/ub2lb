@@ -53,6 +53,7 @@ static menu_t *entry_alloc(void) {
     entry->other = NULL;
     entry->append = NULL;
     entry->initrd = NULL;
+    entry->dtb = NULL;
     entry->modules_cnt = 0;
     entry->argc = 0;
     entry->device_type = DEFAULT_TYPE;
@@ -74,12 +75,14 @@ static void entry_free(menu_t * entry) {
         free(entry->append);
     if (entry->initrd != NULL)
         free(entry->initrd);
+    if (entry->dtb != NULL)
+        free(entry->dtb);
     /* FIXME: free modules and args */
     free(entry);
 }
 
 enum states {
-    S, DEF, DLY, TIT, IN, RT, K, O, RD, M, A, R, AQ, RQ
+    S, DEF, DLY, TIT, IN, RT, K, O, RD, DTB, M, A, R, AQ, RQ
 };
 
 char *getline(char *src, int src_len, int *src_offset) {
@@ -414,6 +417,8 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu) {
                     status = RT;
                 } else if (strcmp(word, "initrd") == 0) {
                     status = RD;
+                } else if (strcmp(word, "dtb") == 0) {
+                    status = DTB;
                 } else if (strcmp(word, "module") == 0) {
                     status = M;
                 } else if (strcmp(word, "title") == 0) {
@@ -515,6 +520,18 @@ static int fsm(char *buffer, int buffer_len, menu_t * menu) {
                 else {
                     status = IN;
                     entry->initrd = strdup(word);
+                }
+                free(line);
+                free(word);
+                break;
+            case DTB:
+                strtrim(lineptr);
+                word = getnextword(lineptr);
+                if (!strlen(word))
+                    status = R;
+                else {
+                    status = IN;
+                    entry->dtb = strdup(word);
                 }
                 free(line);
                 free(word);

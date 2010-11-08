@@ -90,10 +90,11 @@ static boot_dev_t *get_booting_device(void) {
 
 void testboot_linux(menu_t * entry, void *kernel, boot_dev_t * dev) {
     image_header_t *header;
-    char *argv[3];
+    char *argv[4];
     int argc;
     void *initrd;
-
+    void *dtb;
+    
     header = kernel;
 
     if (header->ih_magic != IH_MAGIC
@@ -103,7 +104,8 @@ void testboot_linux(menu_t * entry, void *kernel, boot_dev_t * dev) {
 
     //setenv("stdout", "vga");
     printf("We should boot %s:\n\t%s %s\n\t%s\n", entry->title,
-            entry->kernel, entry->append, entry->initrd);
+            entry->kernel, entry->append, 
+            (entry->initrd != NULL ? entry->initrd : ""));
 
     if (entry->append != NULL)
         setenv("bootargs", entry->append);
@@ -119,9 +121,23 @@ void testboot_linux(menu_t * entry, void *kernel, boot_dev_t * dev) {
     if (entry->initrd != NULL) {
         initrd = malloc(18 * 1024 * 1024);
         dev->load_file(dev, entry->initrd, initrd);
-        argc = 3;
+        argc++;
         argv[2] = malloc(32);
         sprintf(argv[2], "%p", initrd);
+        argv[3] = NULL;
+    } else if (entry->dtb != NULL) {
+        argc++;
+        argv[2] = malloc(32);
+        sprintf(argv[2], "-");
+        argv[3] = NULL;
+    }
+
+    if (entry->dtb != NULL) {
+        dtb = malloc(1024 * 1024);
+        dev->load_file(dev, entry->dtb, dtb);
+        argc++;
+        argv[3] = malloc(32);
+        sprintf(argv[3], "%p", dtb);
     }
 
     bootm(NULL, 0, argc, argv);
